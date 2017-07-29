@@ -4,6 +4,7 @@
 # Eclipse files
 .project
 .cproject
+.pydevproject
 .settings
 .metadata
 
