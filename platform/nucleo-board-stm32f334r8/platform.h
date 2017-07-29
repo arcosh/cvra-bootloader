@@ -35,7 +35,7 @@ extern "C" {
  * Define USE_CAN_ENABLE to set the pin
  * defined below to HIGH upon startup.
  */
-//#define USE_CAN_ENABLE
+#define USE_CAN_ENABLE
 #ifdef USE_CAN_ENABLE
 #define GPIO_PORT_CAN_ENABLE    GPIOA
 #define GPIO_PIN_CAN_ENABLE     GPIO8

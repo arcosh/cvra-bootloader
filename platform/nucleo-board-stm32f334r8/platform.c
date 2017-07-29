@@ -130,7 +130,7 @@ void can_interface_init(void)
              CAN_BTR_SJW_1TQ, // Resynchronization time quanta jump width
              CAN_BTR_TS1_10TQ,// Time segment 1 time quanta width
              CAN_BTR_TS2_7TQ, // Time segment 2 time quanta width
-             2,               // Prescaler
+             1,               // Prescaler
              false,           // Loopback
              false);          // Silent
 
