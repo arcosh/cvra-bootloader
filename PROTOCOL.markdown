@@ -1,19 +1,17 @@
-#Bootloader protocol
+# Bootloader protocol
 
-##Design goals
+## Design goals
 
 * The bootloader might coexist with higher level protocols (UAVCAN) and its operation must not be disturbed.
 * It must handle lost CAN frames gracefully.
 * The protocol must be open to extension.
 
-##CAN Transport layer
+## CAN Transport layer
+
 Apparently it will not be really needed to have a complicated transport layer here.
 Using standard frames over extended frames guarantees that the bootloader protocol always win the arbitration.
 CAN is pretty robust so packet drops will be really infrequent and will be detected when doing the CRC of the whole flash.
 We will never send packet out of order so no sequence number is needed.
-
-Multicast is done by having a list of ID who are adressed at the beginning of a datagram.
-Unicast is just a special case of multicast with only one node in the list.
 
 There is one bit to indicate if this message is the first of a datagram (1) or if it is following a start marker (0).
 
@@ -25,10 +23,17 @@ The format of the CAN message ID is :
 
 *Note:* The first 3 bits of the ID are dominant (0) for bootloader frames. It has therefore highest priority on the bus.
 
-## CAN Datagram format
-The CAN datagram layer has the following resposibilities :
-* Adressing
-* Ensure data integrity (CRC)
+## CAN datagram format
+
+A CAN datagram is constituted by the data bytes of a sequence of CAN frames.
+It has the following resposibilities:
+* Adressing one or more destination nodes
+* Ensuring data integrity (CRC)
+
+Multicasting, i.e. addressing several nodes at once,
+is realized by having a list of destination IDs,
+which are listed at the beginning of the datagram.
+Unicasting is just a special case of multicast with only one node in the list.
 
 The datagram format is the following :
 
@@ -43,9 +48,9 @@ The datagram format is the following :
 
 The command format is simple :
 
-    +-------+------+---+-------+-------+
-    |Version|Command|Param1|...|ParamN |
-    +-------+------+---+-------+-------+
+    +-------+-------+------+---+------+
+    |Version|Command|Param1|...|ParamN|
+    +-------+-------+------+---+------+
 
 The protocol version is simply an integer that increments everytime a change in the command set is done.
 The command interpreter silently ignores commands with the wrong version number to avoid misinterpreting packets.
@@ -70,6 +75,7 @@ They should simply send the MessagePack encoded response on the bus.
 64 bits was chosen to allow tests to run on 64 bits platforms too.
 
 ## Multicast write
+
 When using multicast write the recommended way is the following :
 
 1. Write to all boards using multicast write command.
@@ -79,4 +85,5 @@ When using multicast write the recommended way is the following :
 5. Reflash the boards that failed during above process. (optional)
 
 # References
+
 [1] MessagePack specifications : https://github.com/msgpack/msgpack/blob/master/spec.md
