@@ -125,13 +125,14 @@ int can_datagram_output_bytes(can_datagram_t *dt, char *buffer, size_t buffer_le
             case STATE_PROTOCOL_VERSION:
                 buffer[i] = dt->protocol_version;
                 dt->_writer_state = STATE_CRC;
+                dt->_crc_bytes_written = 0;
                 break;
 
             case STATE_CRC:
                 buffer[i] = dt->crc >> (24 - 8 * dt->_crc_bytes_written);
                 dt->_crc_bytes_written ++;
 
-                if (dt->_crc_bytes_written == 4) {
+                if (dt->_crc_bytes_written >= 4) {
                     dt->_writer_state = STATE_DST_LEN;
                 }
                 break;
@@ -139,14 +140,16 @@ int can_datagram_output_bytes(can_datagram_t *dt, char *buffer, size_t buffer_le
             case STATE_DST_LEN: /* Destination node length */
                 buffer[i] = dt->destination_nodes_len;
                 dt->_writer_state = STATE_DST;
+                dt->_destination_nodes_written = 0;
                 break;
 
             case STATE_DST: /* Destination nodes */
                 buffer[i] = dt->destination_nodes[dt->_destination_nodes_written];
                 dt->_destination_nodes_written ++;
 
-                if (dt->_destination_nodes_written == dt->destination_nodes_len) {
+                if (dt->_destination_nodes_written >= dt->destination_nodes_len) {
                     dt->_writer_state = STATE_DATA_LEN;
+                    dt->_data_length_bytes_written = 0;
                 }
                 break;
 
@@ -154,25 +157,31 @@ int can_datagram_output_bytes(can_datagram_t *dt, char *buffer, size_t buffer_le
                 buffer[i] = dt->data_len >> (24 - 8 * dt->_data_length_bytes_written);
                 dt->_data_length_bytes_written ++;
 
-                if (dt->_data_length_bytes_written == 4) {
+                if (dt->_data_length_bytes_written >= 4) {
                     dt->_writer_state = STATE_DATA;
+                    dt->_data_bytes_written = 0;
                 }
                 break;
 
             case STATE_DATA: /* Data */
-                /* If already finished, just return. */
-                if (dt->_data_bytes_written == dt->data_len) {
-                    return 0;
+                /* If already finished, proceed to trailing state and return. */
+                if (dt->_data_bytes_written >= dt->data_len) {
+                    dt->_writer_state = STATE_TRAILING;
+                    return i;
                 }
 
                 buffer[i] = dt->data[dt->_data_bytes_written];
                 dt->_data_bytes_written ++;
+                break;
 
-                /* If we don't have anymore data to send, return written byte
-                 * count. */
-                if (dt->_data_bytes_written == dt->data_len) {
-                    return i + 1;
-                }
+            case STATE_TRAILING:
+                /* Datagram has been written completely. */
+                return i;
+                break;
+
+            default:
+                /* This point should never be reached. */
+                return i;
                 break;
         }
     }
