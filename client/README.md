@@ -10,11 +10,11 @@ An alternative way is to use your system package manager to install dependencies
 Installing system wide packages via pip is *not a good idea*.
 
 ```sh
-# Create virtual env
+# Create virtual environment
 virtualenv --python=python3 venv
 source env/bin/activate
 
-# if you use fish, run this instead:
+# If you use fish, run this instead:
 # source env/bin/activate.fish
 
 # Install required packages
