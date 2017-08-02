@@ -122,16 +122,34 @@ void command_jump_to_application(int argc, cmp_ctx_t *args, cmp_ctx_t *out, boot
 
 void command_crc_region(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
-    uint32_t crc;
+    uint32_t crc = 0;
     void *address;
     uint32_t size;
     uint64_t tmp;
 
-    cmp_read_uinteger(args, &tmp);
+//    if (argc != 2)
+//        goto done;
+
+    // First command argument: address
+    if (!cmp_read_uinteger(args, &tmp))
+        goto done; // read failed
     address = (void *)(uintptr_t)tmp;
-    cmp_read_uint(args, &size);
+
+    // Second command argument: size
+    if (!cmp_read_uint(args, &size))
+        goto done; // read failed
+
+    // Check if parameters are legal
+    extern uint32_t flash_begin, flash_end;
+    uint32_t address1 = (uint32_t) address;
+    uint32_t address2 = address1 + size;
+    if (address1 < flash_begin || address1 >= flash_end
+     || address2 < flash_begin || address2 >= flash_end)
+        goto done; // address outside of flash memory boundaries
 
     crc = crc32(0, address, size);
+
+done:
     cmp_write_uint(out, crc);
 }
 
