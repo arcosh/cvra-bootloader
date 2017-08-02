@@ -1,4 +1,4 @@
-# Bootloader protocol
+# CAN Bootloader
 [![Build Status](https://travis-ci.org/cvra/can-bootloader.svg?branch=master)](https://travis-ci.org/cvra/can-bootloader)
 
 This repository contains the code used for the bootloader running on every microcontroller in our robots.
@@ -55,3 +55,11 @@ Therefore, when implementing the bootloader or the associated protocol, the foll
 2. Build libopencm3: `pushd libopencm3 && make && popd`.
 3. Build your desired platform: `cd platform/motor-board-v1 && make`.
 4. Flash the resulting binary to your board: `make flash`.
+
+# Protocol
+
+The protocol is described in [PROTOCOL.markdown](./PROTOCOL.markdown).
+
+# License
+
+See [LICENSE.md](./LICENSE.md).
