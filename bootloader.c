@@ -45,7 +45,10 @@ static void return_datagram(uint8_t source_id, uint8_t dest_id, uint8_t *data, s
     dt.crc = can_datagram_compute_crc(&dt);
 
     bool start_of_datagram = true;
-    while (true) {
+
+    // prevent infinite loop, e.g. when the datagram is broken
+    uint8_t transmission_count = 100;
+    while (transmission_count-- > 0) {
         uint8_t dlc = can_datagram_output_bytes(&dt, (char *)buf, sizeof(buf));
 
         if (dlc == 0) {
