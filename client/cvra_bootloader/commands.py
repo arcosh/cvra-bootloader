@@ -4,7 +4,7 @@ COMMAND_SET_VERSION = 2
 
 class CommandType:
     JumpToMain = 1
-    CRCReginon = 2
+    CRCRegion = 2
     Erase = 3
     Write = 4
     Ping = 5
@@ -19,13 +19,13 @@ def encode_command(command_code, *arguments):
     """
     p = Packer(use_bin_type=True)
     obj = list(arguments)
-    return p.pack(COMMAND_SET_VERSION) + p.pack(command_code) +  p.pack(obj)
+    return p.pack(COMMAND_SET_VERSION) + p.pack(command_code) + p.pack(obj)
 
 def encode_crc_region(address, length):
     """
     Encodes the command to request the CRC of a region in flash.
     """
-    return encode_command(CommandType.CRCReginon, address, length)
+    return encode_command(CommandType.CRCRegion, address, length)
 
 def encode_erase_flash_page(address, device_class):
     """
