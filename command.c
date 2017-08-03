@@ -226,12 +226,14 @@ int protocol_execute_command(char *data, size_t data_len, const command_t *comma
     cmp_mem_access_t out_cma;
     cmp_ctx_t out_writer;
 
+    // Prepare for reading commands from input buffer
     cmp_mem_access_ro_init(&command_reader, &command_cma, data, data_len);
-
-    cmp_mem_access_init(&out_writer, &out_cma, out_buf, out_len);
-
     cmp_read_int(&command_reader, &command_version);
 
+    // Prepare output buffer for reponse
+    cmp_mem_access_init(&out_writer, &out_cma, out_buf, out_len);
+
+    // Make sure, client used compatible command set version
     if (command_version != COMMAND_SET_VERSION) {
         return -ERR_INVALID_COMMAND_SET_VERSION;
     }
@@ -252,6 +254,7 @@ int protocol_execute_command(char *data, size_t data_len, const command_t *comma
 
     for (i = 0; i < command_len; ++i) {
         if (commands[i].index == commmand_index) {
+            // Depending on command type invoke corresponding command handler
             commands[i].callback(argc, &command_reader, &out_writer, config);
             return cmp_mem_access_get_pos(&out_cma);
         }

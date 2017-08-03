@@ -18,6 +18,14 @@ uint8_t output_buf[BUFFER_SIZE];
 uint8_t data_buf[BUFFER_SIZE];
 uint8_t addr_buf[128];
 
+
+/**
+ * Association between command codes and command handlers
+ *
+ * Must be compatible with the client,
+ * i.e. with the values in class CommandType
+ * in client/cvra_bootloader/commands.py
+ */
 const command_t commands[] = {
     {.index = 1, .callback = command_jump_to_application},
     {.index = 2, .callback = command_crc_region},
@@ -29,6 +37,7 @@ const command_t commands[] = {
     {.index = 8, .callback = command_config_write_to_flash},
     {.index = 9, .callback = command_config_read}
 };
+
 
 static void return_datagram(uint8_t source_id, uint8_t dest_id, uint8_t *data, size_t len)
 {
@@ -69,6 +78,7 @@ static void return_datagram(uint8_t source_id, uint8_t dest_id, uint8_t *data, s
     }
 }
 
+
 void bootloader_main(int arg)
 {
     bool timeout_active = !(arg == BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
@@ -97,10 +107,19 @@ void bootloader_main(int arg)
     uint8_t data[8];
     uint32_t id;
     uint8_t len;
+
+    /*
+     * Remain in the bootloader until timeout is reached or respectively
+     * until a jump to the main application is requested via the appropriate CAN command.
+     */
     while (true) {
-        if (timeout_active && timeout_reached()) {
-            command_jump_to_application(0, NULL, NULL, &config);
-        }
+        // Until flash writes are working with the STM32F334R8, do not timeout / jump to main application
+//        if (timeout_active && timeout_reached()) {
+//            command_jump_to_application(0, NULL, NULL, &config);
+//        }
+
+        // TODO: Conserve energy by sleeping until a CAN frame is received; requires CAN interrupts to be enabled
+//        asm("wfi");
 
         if (!can_interface_read_message(&id, data, &len, CAN_RECEIVE_TIMEOUT)) {
             continue;
