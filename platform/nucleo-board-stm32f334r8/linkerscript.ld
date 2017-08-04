@@ -13,9 +13,9 @@ MEMORY
     FLASH_TEXT    (RX) : ORIGIN = 0x08000000, LENGTH = 20K
     FLASH_CONFIG1 (RX) : ORIGIN = 0x08005000, LENGTH = 2K
     FLASH_CONFIG2 (RX) : ORIGIN = 0x08005800, LENGTH = 2K
-    FLASH_APP     (RX) : ORIGIN = 0x08006000, LENGTH = 44K
-    RAM       (RWXAIL) : ORIGIN = 0x20000000, LENGTH = 12K
-    CCRAM         (RW) : ORIGIN = 0x20003000, LENGTH = 4K
+    FLASH_APP     (RX) : ORIGIN = 0x08006000, LENGTH = 40K
+    RAM          (RWX) : ORIGIN = 0x20000000, LENGTH = 12K
+    CCRAM        (RWX) : ORIGIN = 0x10000000, LENGTH = 4K
 }
 
 REGION_ALIAS("REGION_TEXT",   FLASH_TEXT);
@@ -30,6 +30,10 @@ ENTRY(reset_handler)
 
 SECTIONS
 {
+    /* flash memory boundaries */
+    flash_begin = ORIGIN(FLASH_TEXT);
+    flash_end = ORIGIN(FLASH_APP) + LENGTH(FLASH_APP);
+
     /* config flash page */
     config_page1 = ORIGIN(FLASH_CONFIG1);
     config_page2 = ORIGIN(FLASH_CONFIG2);
