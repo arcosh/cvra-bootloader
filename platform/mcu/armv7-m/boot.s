@@ -18,11 +18,16 @@
 .extern bootloader_startup
 .extern application_address
 
-.equ RAM_START,         0x20000000
-.equ SCB_VTOR,          0xE000ED08
+@ The RAM address is defined in the platform's linker file.
+.extern ram_begin
 
-.equ magic_value_lo,    0x01234567
-.equ magic_value_hi,    0x0089abcd
+@ Control register for vector table relocation
+.equ SCB_VTOR, 0xE000ED08
+
+@ Import magic words from boot_arg.c
+.extern boot_arg_magic_value_lo
+.extern boot_arg_magic_value_hi
+
 
 .thumb
 .thumb_func
@@ -30,7 +35,7 @@
 .section .text
 .global reset_handler
 reset_handler:
-    ldr     r5, =RAM_START
+    ldr     r5, =ram_begin
     ldr     r1, [r5, #0]    @ load magic value from RAM
     ldr     r2, [r5, #4]
     ldr     r4, =0x00FFFFFF
@@ -38,10 +43,11 @@ reset_handler:
 
     eor     r0, r0          @ clear argument register
 
-    ldr     r3, =magic_value_lo
+    @ verify magic values
+    ldr     r3, =boot_arg_magic_value_lo
     cmp     r1, r3
     bne     bootloader_startup
-    ldr     r3, =magic_value_hi
+    ldr     r3, =boot_arg_magic_value_hi
     cmp     r2, r3
     bne     bootloader_startup
 
@@ -49,14 +55,15 @@ reset_handler:
     ldrb    r0, [r5, #7]    @ load argument byte
 
     eor     r1, r1
-    str     r1, [r5, #0]    @ clear ram_start
+    str     r1, [r5, #0]    @ clear ram_begin
     str     r1, [r5, #4]
 
     cmp     r0, #2
     beq     _app_jmp
     cmp     r0, #3
     beq     _st_bootloader
-    @ default: launch bootloader, argument r0
+
+    @ default: launch bootloader with argument 0
     b       bootloader_startup
 
 _app_jmp:

@@ -199,5 +199,6 @@ void platform_main(int arg)
     can_interface_init();
     bootloader_main(arg);
 
+    // We only arrive here, if something went wrong. Upon next reboot directly boot into the bootloader.
     reboot_system(BOOT_ARG_START_BOOTLOADER);
 }
