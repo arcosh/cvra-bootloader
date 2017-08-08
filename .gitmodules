@@ -12,4 +12,4 @@
 	url = https://github.com/cvra/cmp
 [submodule "dependencies/cmp_mem_access"]
 	path = dependencies/cmp_mem_access
-	url = https://github.com/matthiasbock/cvra-cmp_mem_access.git
+	url = git@github.com:cvra/cmp_mem_access.git

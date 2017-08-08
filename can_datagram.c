@@ -15,11 +15,7 @@ enum {
 
 void can_datagram_init(can_datagram_t *dt)
 {
-//    memset(dt, 0, sizeof *dt);
-    for (uint32_t i=0; i<sizeof(can_datagram_t); i++)
-    {
-        *(((char*) dt)+i) = 0;
-    }
+    memset(dt, 0, sizeof *dt);
     dt->protocol_version = CAN_DATAGRAM_VERSION;
 }
 
