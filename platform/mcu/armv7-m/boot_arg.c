@@ -9,7 +9,7 @@ void reboot_system(uint8_t arg)
 {
     // The address marking the beginning of RAM is defined in the linker file.
     extern uint32_t ram_begin;
-    uint32_t *ram_start = (uint32_t*) ram_begin;
+    uint32_t* ram_start = (uint32_t*) &ram_begin;
 
     // Write a magic sequence and the argument to RAM
     ram_start[0] = boot_arg_magic_value_lo;

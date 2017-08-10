@@ -18,13 +18,23 @@
 .extern bootloader_startup
 .extern application_address
 
+@
 @ The RAM address is defined in the platform's linker file.
+@
 .extern ram_begin
 
+@
 @ Control register for vector table relocation
+@
+@ Note: SCB_VTOR could also be included from libopencm3/include/libopencm3/cm3/scb.h,
+@       although it apparently has the same address on all Cortex MCUs
+@       (which possess a vector table offset register).
+@
 .equ SCB_VTOR, 0xE000ED08
 
+@
 @ Import magic words from boot_arg.c
+@
 .extern boot_arg_magic_value_lo
 .extern boot_arg_magic_value_hi
 
@@ -44,10 +54,12 @@ reset_handler:
     eor     r0, r0          @ clear argument register
 
     @ verify magic values
-    ldr     r3, =boot_arg_magic_value_lo
+    ldr     r4, =boot_arg_magic_value_lo
+    ldr     r3, [r4]
     cmp     r1, r3
     bne     bootloader_startup
-    ldr     r3, =boot_arg_magic_value_hi
+    ldr     r4, =boot_arg_magic_value_hi
+    ldr     r3, [r4]
     cmp     r2, r3
     bne     bootloader_startup
 
