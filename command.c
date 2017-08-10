@@ -80,6 +80,7 @@ command_fail:
     return;
 }
 
+
 void command_write_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
     void *address;
@@ -130,6 +131,7 @@ command_fail:
     return;
 }
 
+
 void command_read_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
     void *address;
@@ -143,6 +145,7 @@ void command_read_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_co
 
     cmp_write_bin(out, address, size);
 }
+
 
 void command_jump_to_application(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
@@ -186,16 +189,19 @@ done:
     cmp_write_uint(out, crc);
 }
 
+
 void command_config_update(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
     config_update_from_serialized(config, args);
     cmp_write_bool(out, 1);
 }
 
+
 void command_ping(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
     cmp_write_bool(out, 1);
 }
+
 
 static bool flash_write_and_verify(void *addr, void *data, size_t len)
 {
@@ -205,6 +211,7 @@ static bool flash_write_and_verify(void *addr, void *data, size_t len)
     flash_writer_lock();
     return config_is_valid(addr, len);
 }
+
 
 void command_config_write_to_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
@@ -242,16 +249,18 @@ void command_config_write_to_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bo
     }
 }
 
+
 void command_config_read(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
     config_write_messagepack(out, config);
 }
 
-int protocol_execute_command(char *data, size_t data_len, const command_t *commands, int command_len, char *out_buf, size_t out_len, bootloader_config_t *config)
+
+int execute_datagram_commands(char *data, size_t data_len, const command_t *commands, int command_len, char *out_buf, size_t out_len, bootloader_config_t *config)
 {
     cmp_mem_access_t command_cma;
     cmp_ctx_t command_reader;
-    int32_t commmand_index, i;
+    int32_t command_index;
     uint32_t argc;
     int32_t command_version;
     bool read_success;
@@ -271,7 +280,7 @@ int protocol_execute_command(char *data, size_t data_len, const command_t *comma
         return -ERR_INVALID_COMMAND_SET_VERSION;
     }
 
-    read_success = cmp_read_int(&command_reader, &commmand_index);
+    read_success = cmp_read_int(&command_reader, &command_index);
 
     if (!read_success) {
         return -ERR_INVALID_COMMAND;
@@ -285,13 +294,13 @@ int protocol_execute_command(char *data, size_t data_len, const command_t *comma
         argc = 0;
     }
 
-    for (i = 0; i < command_len; ++i) {
-        if (commands[i].index == commmand_index) {
-            // Depending on command type invoke corresponding command handler
-            commands[i].callback(argc, &command_reader, &out_writer, config);
-            return cmp_mem_access_get_pos(&out_cma);
-        }
+    // Depending on command type, invoke the corresponding command handler
+    command_t* cmd;
+    cmd = get_command_by_index(command_index);
+    if (cmd != 0)
+    {
+        cmd->callback(argc, &command_reader, &out_writer, config);
+        return cmp_mem_access_get_pos(&out_cma);
     }
-
     return -ERR_COMMAND_NOT_FOUND;
 }

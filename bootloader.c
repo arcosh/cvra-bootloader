@@ -93,7 +93,8 @@ void bootloader_main(int arg)
 
     uint8_t data[8];
     uint32_t id;
-    uint8_t len;
+    uint8_t data_length;
+    uint8_t reply_length;
 
     /*
      * Remain in the bootloader until timeout is reached or respectively
@@ -108,41 +109,64 @@ void bootloader_main(int arg)
         // TODO: Conserve energy by sleeping until a CAN frame is received; requires CAN interrupts to be enabled
 //        asm("wfi");
 
-        if (!can_interface_read_message(&id, data, &len, CAN_RECEIVE_TIMEOUT)) {
+        if (!can_interface_read_message(&id, data, &data_length, CAN_RECEIVE_TIMEOUT)) {
             continue;
         }
 
+        // Begin a new, empty datagram
         if ((id & ID_START_MASK) != 0) {
             can_datagram_start(&dt);
         }
 
+        // Append frame bytes to current datagram
         int i;
-        for (i = 0; i < len; i++) {
+        for (i = 0; i < data_length; i++) {
             can_datagram_input_byte(&dt, data[i]);
         }
 
         if (can_datagram_is_complete(&dt)) {
             if (can_datagram_is_valid(&dt)) {
                 timeout_active = false;
+
+                // Check, if this nodes's ID is amongst the datagram's target IDs
+                bool addressed = false;
                 int i;
                 for (i = 0; i < dt.destination_nodes_len; i++) {
                     if (dt.destination_nodes[i] == config.ID) {
                         timeout_active = false;
+                        addressed = true;
                         break;
                     }
                 }
-                if (i != dt.destination_nodes_len) {
-                    // we were addressed
-                    len = protocol_execute_command((char *)dt.data, dt.data_len,
-                        &commands[0], sizeof(commands)/sizeof(command_t),
-                        (char *)output_buf, sizeof(output_buf), &config);
 
-                    if (len > 0) {
+                if (addressed) {
+                    // we were addressed
+                    reply_length = execute_datagram_commands(
+                            (char*) dt.data,
+                            dt.data_len,
+                            &commands[0],
+                            sizeof(commands)/sizeof(command_t),
+                            (char*) output_buf,
+                            sizeof(output_buf),
+                            &config
+                            );
+
+                    if (reply_length > 0) {
+                        // The reply's CAN frame ID must not occupy start mask bits.
                         uint8_t return_id = id & ~ID_START_MASK;
-                        return_datagram(config.ID, return_id, output_buf, (size_t) len);
+
+                        // Send our reply via CAN
+                        return_datagram(
+                                config.ID,
+                                return_id,
+                                output_buf,
+                                (size_t) reply_length
+                                );
                     }
                 }
             }
+
+            // Begin a new datagram, regardsless of whether the current datagram was valid or not
             can_datagram_start(&dt);
         }
     }
