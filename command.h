@@ -27,6 +27,40 @@ extern "C" {
 /** Total number of supported commands */
 #define COMMAND_COUNT 9
 
+/**
+ * Possible reply values for erase flash command
+ *
+ * 1 and 0 are kept for backwards compatibility with previous client versions,
+ * which evaluate 1 as true/success respectively 0 as false/failed.
+ */
+#define FLASH_ERASE_SUCCESS                         1
+#define FLASH_ERASE_UNSPECIFIED_ERROR               0
+#define FLASH_ERASE_ERROR_BEFORE_APP                10
+#define FLASH_ERASE_ERROR_AFTER_APP                 11
+#define FLASH_ERASE_ERROR_DEVICE_CLASS_MISMATCH     12
+
+/**
+ * Possible reply values for write flash command
+ *
+ * 1 and 0 are kept for backwards compatibility with previous client versions,
+ * which evaluate 1 as true/success respectively 0 as false/failed.
+ */
+#define FLASH_WRITE_SUCCESS                         1
+#define FLASH_WRITE_UNSPECIFIED_ERROR               0
+#define FLASH_WRITE_ERROR_BEFORE_APP                20
+#define FLASH_WRITE_ERROR_AFTER_APP                 21
+#define FLASH_WRITE_ERROR_DEVICE_CLASS_MISMATCH     22
+#define FLASH_WRITE_ERROR_UNKNOWN_SIZE              23
+
+/**
+ * Possible reply values for CRC command
+ * besides to CRC value itself
+ */
+#define CRC_ERROR_ADDRESS_UNSPECIFIED               30
+#define CRC_ERROR_LENGTH_UNSPECIFIED                31
+#define CRC_ERROR_ILLEGAL_ADDRESS                   32
+
+
 typedef struct {
     /** Command ID */
     uint8_t index;

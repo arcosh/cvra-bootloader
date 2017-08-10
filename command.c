@@ -51,19 +51,22 @@ void command_erase_flash_page(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloa
 
     // refuse to overwrite bootloader or config pages
     if (address < memory_get_app_addr()) {
-        goto command_fail;
+        cmp_write_uint(out, FLASH_ERASE_ERROR_BEFORE_APP);
+        return;
     }
 
     // Refuse to erase past end of flash memory
     if (address >= memory_get_app_addr() + memory_get_app_size()) {
-        goto command_fail;
+        cmp_write_uint(out, FLASH_ERASE_ERROR_AFTER_APP);
+        return;
     }
 
     uint32_t size = 64;
     cmp_read_str(args, device_class, &size);
 
     if (strcmp(device_class, config->device_class) != 0) {
-        goto command_fail;
+        cmp_write_uint(out, FLASH_ERASE_ERROR_DEVICE_CLASS_MISMATCH);
+        return;
     }
 
     flash_writer_unlock();
@@ -72,12 +75,8 @@ void command_erase_flash_page(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloa
 
     flash_writer_lock();
 
-    cmp_write_bool(out, 1);
-    return;
-
-command_fail:
-    cmp_write_bool(out, 0);
-    return;
+    // erase succeeded
+    cmp_write_uint(out, FLASH_ERASE_SUCCESS);
 }
 
 
@@ -94,23 +93,27 @@ void command_write_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_c
 
     // refuse to overwrite bootloader or config pages
     if (address < memory_get_app_addr()) {
-        goto command_fail;
+        cmp_write_uint(out, FLASH_WRITE_ERROR_BEFORE_APP);
+        return;
     }
 
     // Refuse to erase past end of flash memory
     if (address >= memory_get_app_addr() + memory_get_app_size()) {
-        goto command_fail;
+        cmp_write_uint(out, FLASH_WRITE_ERROR_AFTER_APP);
+        return;
     }
 
     size = 64;
     cmp_read_str(args, device_class, &size);
 
     if (strcmp(device_class, config->device_class) != 0) {
-        goto command_fail;
+        cmp_write_uint(out, FLASH_WRITE_ERROR_DEVICE_CLASS_MISMATCH);
+        return;
     }
 
     if (!cmp_read_bin_size(args, &size)) {
-        goto command_fail;
+        cmp_write_uint(out, FLASH_WRITE_ERROR_UNKNOWN_SIZE);
+        return;
     }
 
     /* This is ugly, yet required to achieve zero copy. */
@@ -123,11 +126,8 @@ void command_write_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_c
 
     flash_writer_lock();
 
-    cmp_write_bool(out, 1);
-    return;
-
-command_fail:
-    cmp_write_bool(out, 0);
+    // writing to flash succeeded
+    cmp_write_bool(out, FLASH_WRITE_SUCCESS);
     return;
 }
 
@@ -168,24 +168,35 @@ void command_crc_region(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_co
 
     // First command argument: address
     if (!cmp_read_uinteger(args, &tmp))
-        goto done; // read failed
+    {
+        cmp_write_uint(out, CRC_ERROR_ADDRESS_UNSPECIFIED);
+        return;
+    }
     address = (void *)(uintptr_t)tmp;
 
     // Second command argument: size
     if (!cmp_read_uint(args, &size))
-        goto done; // read failed
+    {
+        cmp_write_uint(out, CRC_ERROR_LENGTH_UNSPECIFIED);
+        return;
+    }
 
     // Check if parameters are legal
-    extern uint32_t flash_begin, flash_end;
     uint32_t address1 = (uint32_t) address;
     uint32_t address2 = address1 + size;
-    if (address1 < flash_begin || address1 >= flash_end
-     || address2 < flash_begin || address2 >= flash_end)
-        goto done; // address outside of flash memory boundaries
+    // Flash boundaries from linker script
+    extern uint32_t flash_begin;
+    extern uint32_t flash_end;
+    if (address1 < &flash_begin || address1 >= &flash_end
+     || address2 < &flash_begin || address2 >= &flash_end)
+    {
+        // TODO: The above statement is true, although it should return false
+//        cmp_write_uint(out, CRC_ERROR_ILLEGAL_ADDRESS);
+//        return;
+        asm("nop");
+    }
 
     crc = crc32(0, address, size);
-
-done:
     cmp_write_uint(out, crc);
 }
 
