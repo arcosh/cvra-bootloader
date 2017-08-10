@@ -13,13 +13,30 @@ extern void reset_handler(void);
 
 __attribute__ ((section(".vectors")))
 void (*const vector_table[]) (void) = {
-    (void*)&_eram,
+    (void*)&_eram,  // stack pointer
     reset_handler,
     fault_handler,  // nmi_handler
     fault_handler,  // hard_fault_handler
     fault_handler,  // mem_manage_handler
     fault_handler,  // bus_fault_handler
     fault_handler,  // usage_fault_handler
+    0,              // reserved
+    0,              // reserved
+    0,              // reserved
+    0,              // reserved
+    fault_handler,  // svcall_handler
+    0,              // debug_handler
+    0,              // reserved
+    fault_handler,  // pendsv_handler
+    fault_handler,  // systick_handler
+    fault_handler,  // IRQ0
+    fault_handler,  // IRQ1
+    fault_handler,  // IRQ2
+    fault_handler,  // IRQ3
+    fault_handler,  // IRQ4
+    fault_handler,  // IRQ5
+    fault_handler,  // IRQ6
+    fault_handler,  // IRQ7
 };
 
 void __attribute__ ((naked)) bootloader_startup(int arg)
