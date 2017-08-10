@@ -20,23 +20,10 @@ uint8_t addr_buf[128];
 
 
 /**
- * Association between command codes and command handlers
- *
- * Must be compatible with the client,
- * i.e. with the values in class CommandType
- * in client/cvra_bootloader/commands.py
+ * List of commands supported by this firmware
+ * defined in command.c
  */
-const command_t commands[] = {
-    {.index = 1, .callback = command_jump_to_application},
-    {.index = 2, .callback = command_crc_region},
-    {.index = 3, .callback = command_erase_flash_page},
-    {.index = 4, .callback = command_write_flash},
-    {.index = 5, .callback = command_ping},
-    {.index = 6, .callback = command_read_flash},
-    {.index = 7, .callback = command_config_update},
-    {.index = 8, .callback = command_config_write_to_flash},
-    {.index = 9, .callback = command_config_read}
-};
+extern command_t commands[COMMAND_COUNT];
 
 
 static void return_datagram(uint8_t source_id, uint8_t dest_id, uint8_t *data, size_t len)

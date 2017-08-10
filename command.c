@@ -7,6 +7,39 @@
 #include "config.h"
 #include "command.h"
 
+
+/**
+ * Supported command set
+ * Associates command codes and appropriate command handlers
+ *
+ * This set must be compatible with the client,
+ * i.e. with the values in class CommandType
+ * in file client/cvra_bootloader/commands.py
+ */
+command_t commands[COMMAND_COUNT] = {
+    {.index = 1, .callback = command_jump_to_application},
+    {.index = 2, .callback = command_crc_region},
+    {.index = 3, .callback = command_erase_flash_page},
+    {.index = 4, .callback = command_write_flash},
+    {.index = 5, .callback = command_ping},
+    {.index = 6, .callback = command_read_flash},
+    {.index = 7, .callback = command_config_update},
+    {.index = 8, .callback = command_config_write_to_flash},
+    {.index = 9, .callback = command_config_read}
+};
+
+
+command_t* get_command_by_index(uint8_t index)
+{
+    for (uint8_t i=0; i<COMMAND_COUNT; i++)
+        if (commands[i].index == index)
+            return &commands[i];
+
+    // Search was unsuccessfull
+    return 0;
+}
+
+
 void command_erase_flash_page(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
     void *address;

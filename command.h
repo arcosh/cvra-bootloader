@@ -24,6 +24,9 @@ extern "C" {
 /** Version of the protocol command set. */
 #define COMMAND_SET_VERSION 2
 
+/** Total number of supported commands */
+#define COMMAND_COUNT 9
+
 typedef struct {
     /** Command ID */
     uint8_t index;
@@ -36,6 +39,15 @@ typedef struct {
      */
     void (*callback)(int, cmp_ctx_t *, cmp_ctx_t *, bootloader_config_t *config);
 } command_t;
+
+
+/** Find a command by command index
+ * @param [in] index The command index to search
+ * @return Command with the matching index
+ * @retval 0 No command with a matching index was found
+ */
+command_t* get_command_by_index(uint8_t index);
+
 
 /** Parses a datagram data field and executes the correct function.
  * @param [in] data The raw data to parse.
