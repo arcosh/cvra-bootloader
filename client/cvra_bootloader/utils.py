@@ -88,12 +88,15 @@ def open_connection(args):
         port = serial.Serial(port=args.serial_device, timeout=0.1)
         return can.adapters.SerialCANConnection(port)
 
-def read_can_datagrams(fdesc):
+
+def read_can_datagrams(connection):
     buf = defaultdict(lambda: bytes())
+    # TODO: Implement better performing wait and timeout function, maybe with resend option
+    time.sleep(0.6)
     while True:
         datagram = None
         while datagram is None:
-            frame = fdesc.receive_frame()
+            frame = connection.receive_frame()
 
             if frame is None:
                 yield None
@@ -114,16 +117,16 @@ def read_can_datagrams(fdesc):
         yield data, dst, src
 
 
-def ping_board(fdesc, destination):
+def ping_board(connection, destination):
     """
     Checks if a board is up.
 
     Returns True if it is online, false otherwise.
     """
     logging.debug("Pinging device " + str(destination) + "...")
-    write_command(fdesc, commands.encode_ping(), [destination])
+    write_command(connection, commands.encode_ping(), [destination])
 
-    reader = read_can_datagrams(fdesc)
+    reader = read_can_datagrams(connection)
     answer = next(reader)
 
     # Timeout
@@ -135,7 +138,7 @@ def ping_board(fdesc, destination):
     return True
 
 
-def write_command(fdesc, command, destinations, source=0):
+def write_command(connection, command, destinations, source=0):
     """
     Writes the given encoded command to the CAN bridge.
     """
@@ -144,19 +147,17 @@ def write_command(fdesc, command, destinations, source=0):
     frames = can.datagram_to_frames(datagram, source)
 
     for frame in frames:
-        fdesc.send_frame(frame)
-
-    time.sleep(0.1)
+        connection.send_frame(frame)
 
 
-def write_command_retry(fdesc, command, destinations, source=0, retry_limit=3):
+def write_command_retry(connection, command, destinations, source=0, retry_limit=3):
     """
     Writes a command, retries as long as there is no answer and returns a dictionnary containing
     a map of each board ID and its answer.
     """
     logging.debug("Initiating transmission (attempt 1/" + str(1 + retry_limit) + ")...")
-    write_command(fdesc, command, destinations, source)
-    reader = read_can_datagrams(fdesc)
+    write_command(connection, command, destinations, source)
+    reader = read_can_datagrams(connection)
     answers = dict()
 
     retry_count = 0
@@ -177,8 +178,8 @@ def write_command_retry(fdesc, command, destinations, source=0, retry_limit=3):
                 exit(1)
 
             # Retry
-            logging.debug("Initiating transmission (attempt " + str(retry_count + 2) + "/" + str(1 + retry_limit) + ")...")
-            write_command(fdesc, command, timedout_boards, source)
+            logging.debug("Retrying transmission (attempt " + str(retry_count + 2) + "/" + str(1 + retry_limit) + ")...")
+            write_command(connection, command, timedout_boards, source)
             retry_count += 1
             continue
 
@@ -189,16 +190,16 @@ def write_command_retry(fdesc, command, destinations, source=0, retry_limit=3):
     return answers
 
 
-def config_update_and_save(fdesc, config, destinations):
+def config_update_and_save(connection, config, destinations):
     """
     Updates the config of the given destinations.
     Keys not in the given config are left unchanged.
     """
     # First send the updated config
-    logging.debug("Encoding config udpate...")
+    logging.debug("Encoding config udpate: " + str(config))
     command = commands.encode_update_config(config)
-    write_command_retry(fdesc, command, destinations)
+    write_command_retry(connection, command, destinations)
 
     # Then save the config to flash
-    logging.debug("Requesting write to flash...")
-    write_command_retry(fdesc, commands.encode_save_config(), destinations)
+    logging.debug("Requesting config write to flash...")
+    write_command_retry(connection, commands.encode_save_config(), destinations)
