@@ -12,6 +12,9 @@ extern "C" {
 #define FLASH_PAGE_SIZE 0x4000 // 16K
 #define CONFIG_PAGE_SIZE FLASH_PAGE_SIZE
 
+// Select, which CAN peripheral should be used
+#define CAN     CAN1
+
 extern uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
 
 // symbols defined in linkerscript
