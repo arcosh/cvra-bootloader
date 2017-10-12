@@ -60,7 +60,26 @@ extern "C" {
 #define CRC_ERROR_LENGTH_UNSPECIFIED                31
 #define CRC_ERROR_ILLEGAL_ADDRESS                   32
 
+/**
+ * In order to speed up application development,
+ * e.g. while flashing through a debugger device,
+ * one might wish to (temporarily) disable CRC validation
+ * of the flashed application by the bootloader.
+ * Define COMMAND_JUMP_DISABLE_CRC_CHECKING to do so.
+ * When defined, the bootloader will run the application
+ * regardless of it's CRC value.
+ * Otherwise the bootloader will not run the application
+ * in case the CRC does not match the CRC stored in the config
+ * but will remain in the bootloader forever.
+ */
+//#define COMMAND_JUMP_DISABLE_CRC_CHECKING
 
+
+/**
+ * This struct allows for the definition of bootloader commands
+ * and association of the corresponding handlers/callbacks
+ * to be executed upon invocation of the command via CAN.
+ */
 typedef struct {
     /** Command ID */
     uint8_t index;

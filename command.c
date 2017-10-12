@@ -149,11 +149,19 @@ void command_read_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_co
 
 void command_jump_to_application(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
+#ifndef COMMAND_JUMP_DISABLE_CRC_CHECKING
+    // Compare the CRC of the flashed application with the CRC stored in the config
     if (crc32(0, memory_get_app_addr(), config->application_size) == config->application_crc) {
+        // CRC is valid: run application
         reboot_system(BOOT_ARG_START_APPLICATION);
     } else {
+        // CRC is invalid: reboot and remain in bootloader
         reboot_system(BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
     }
+#else
+    // Run the flashed application regardless of whether it's CRC is valid or not
+    reboot_system(BOOT_ARG_START_APPLICATION);
+#endif
 }
 
 void command_crc_region(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
