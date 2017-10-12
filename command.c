@@ -187,8 +187,8 @@ void command_crc_region(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_co
     // Flash boundaries from linker script
     extern uint32_t flash_begin;
     extern uint32_t flash_end;
-    if (address1 < &flash_begin || address1 >= &flash_end
-     || address2 < &flash_begin || address2 >= &flash_end)
+    if (address1 < (uint32_t) (&flash_begin) || address1 >= (uint32_t) (&flash_end)
+     || address2 < (uint32_t) (&flash_begin) || address2 >= (uint32_t) (&flash_end))
     {
         // TODO: The above statement is true, although it should return false
 //        cmp_write_uint(out, CRC_ERROR_ILLEGAL_ADDRESS);
