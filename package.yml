@@ -51,4 +51,5 @@ templates:
     platform/can-io-board/include.jinja: 'platform/can-io-board/include.mk'
     platform/nucleo-board-stm32f103rb/include.jinja: 'platform/nucleo-board-stm32f103rb/include.mk'
     platform/nucleo-board-stm32f334r8/include.jinja: 'platform/nucleo-board-stm32f334r8/include.mk'
+    platform/nucleo-board-stm32f446re/include.jinja: 'platform/nucleo-board-stm32f446re/include.mk'
     platform/uwb-beacon/include.jinja: 'platform/uwb-beacon/include.mk'
