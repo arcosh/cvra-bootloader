@@ -68,8 +68,15 @@ void can_interface_init(void)
     rcc_periph_clock_enable(RCC_GPIOB);
     #endif
 
-    // Enable clock to CAN peripheral
-    rcc_periph_clock_enable(RCC_CAN);
+    /*
+     * In microcontrollers with dual-bxCAN (master+slave) configurations
+     * it is obligatory to enable the master CAN's clock even if the master CAN isn't used,
+     * because the master is managing the slave's access to the dual-bxCAN's SRAM.
+     */
+    rcc_periph_clock_enable(RCC_CAN1);
+#ifdef USE_CAN2
+    rcc_periph_clock_enable(RCC_CAN2);
+#endif
 
     // Setup CAN pins
     gpio_mode_setup(
@@ -123,8 +130,9 @@ void can_interface_init(void)
     #endif // USE_CAN_ENABLE
 
     /*
-    STM32F3 CAN1 on 18MHz configured APB1 peripheral clock
-    18MHz / 2 -> 9MHz
+    CAN1 and CAN2 are running from APB1 clock (18MHz).
+    Therefore 500kbps can be achieved with prescaler=2 like this:
+    18MHz / 2 = 9MHz
     9MHz / (1tq + 10tq + 7tq) = 500kHz => 500kbit
     */
     can_init(CAN,            // Interface
@@ -161,37 +169,36 @@ void fault_handler(void)
     reboot_system(BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
 }
 
+/**
+ * Configure the processor to run at 36MHz from the internal resonator
+ */
 void rcc_clock_setup_in_hsi_out_36mhz(void)
 {
-    static clock_scale_t clock_36mhz =
-    {
-        pll: RCC_CFGR_PLLMUL_PLL_IN_CLK_X9,
-        pllsrc: RCC_CFGR_PLLSRC_HSI_DIV2,
-        hpre: RCC_CFGR_HPRE_DIV_NONE,
-        ppre1: RCC_CFGR_PPRE1_DIV_2,
-        ppre2: RCC_CFGR_PPRE2_DIV_NONE,
-        power_save: 1,
-        flash_config: FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY_1WS,
-        apb1_frequency: 18000000,
-        apb2_frequency: 36000000,
-    };
-
-    rcc_clock_setup_hsi(&clock_36mhz);
+    // Enable internal high-speed resonator (16 MHz)
+    rcc_osc_on(HSI);
+    // Wait for internal resonator to become ready
+    rcc_wait_for_osc_ready(HSI);
+    // Configure AHB, APB1 and APB2 prescalers
+    rcc_set_hpre(2);
+    rcc_set_ppre1(4);
+    rcc_set_ppre2(2);
+    // Configure PLL source multiplexer to use internal resonator
+    rcc_set_pll_source(HSI);
+    // Configure PLL to scale input to 72 MHz
+    rcc_set_main_pll_hsi(8, 72, 2, 2);
+    // Set system clock source to PLL
+    rcc_set_sysclk_source(PLL);
 }
 
 void platform_main(int arg)
 {
-    /*
-    // If external 8MHz present on PF0/PF1
-    rcc_clock_setup_in_hse_8mhz_out_72mhz();
-    */
-    // Otherwise use internal RC oscillator
+    // Run from internal RC oscillator
     rcc_clock_setup_in_hsi_out_36mhz();
 
-    // Initialize the onboard LED
+    // Initialize the on-board LED
     led_init();
 
-    // Blink onboard LED to indicate platform startup
+    // Blink on-board LED to indicate platform startup
     led_blink();
 
     // Configure timeout of 10000 milliseconds (assuming 36 Mhz system clock, see above)

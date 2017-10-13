@@ -1,6 +1,6 @@
 /**
- * Platform support for the STM32-Nucleo64 Board F334R8
- * http://www.st.com/en/evaluation-tools/nucleo-f334r8.html
+ * Platform-specific definitions for the STM32-Nucleo64 Board F446RE
+ * http://www.st.com/en/evaluation-tools/nucleo-f446re.html
  */
 
 #ifndef PLATFORM_H
@@ -13,7 +13,7 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
-#define PLATFORM_DEVICE_CLASS "nucleo-board-stm32f334r8"
+#define PLATFORM_DEVICE_CLASS "nucleo-board-stm32f446re"
 #define FLASH_PAGE_SIZE 0x0800 // 2K
 #define CONFIG_PAGE_SIZE FLASH_PAGE_SIZE
 
@@ -21,12 +21,42 @@ extern "C" {
 #define GPIO_PORT_LED2  GPIOA
 #define GPIO_PIN_LED2   GPIO5
 
-// CAN pins
+/*
+ * Configure which CAN peripheral to use
+ */
+//#define USE_CAN1
+#define USE_CAN2
+
+/*
+ * Pin configuration when using CAN1:
+ *   CAN1_RX <-> PB8
+ *   CAN1_TX <-> PB9
+ */
+#ifdef USE_CAN1
+#define CAN                 CAN1
 #define GPIO_PORT_CAN_RX    GPIOB
 #define GPIO_PIN_CAN_RX     GPIO8
 #define GPIO_PORT_CAN_TX    GPIOB
 #define GPIO_PIN_CAN_TX     GPIO9
 #define GPIO_AF_CAN         GPIO_AF9
+#endif
+
+/*
+ * Pin configuration when using CAN2:
+ *   CAN2_RX <-> PB5
+ *   CAN2_TX <-> PB13
+ *
+ * This pin configuration is compatible with ST's bootloader,
+ * which is present in the microcontroller's ROM.
+ */
+#ifdef USE_CAN2
+#define CAN                 CAN2
+#define GPIO_PORT_CAN_RX    GPIOB
+#define GPIO_PIN_CAN_RX     GPIO5
+#define GPIO_PORT_CAN_TX    GPIOB
+#define GPIO_PIN_CAN_TX     GPIO13
+#define GPIO_AF_CAN         GPIO_AF9
+#endif
 
 /*
  * Many CAN transceivers have an enable input,
@@ -40,6 +70,10 @@ extern "C" {
 //#define USE_CAN_ENABLE
 //#define CAN_ENABLE_INVERTED
 
+/*
+ * Pin configuration for the CAN_ENABLE signal:
+ *    CAN_ENABLE <-> PA8
+ */
 #ifdef USE_CAN_ENABLE
 #define GPIO_PORT_CAN_ENABLE    GPIOA
 #define GPIO_PIN_CAN_ENABLE     GPIO8

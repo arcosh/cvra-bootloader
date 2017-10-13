@@ -9,7 +9,7 @@ BUILD_DIR = build
 PLATFORM_CSRC = platform.c
 
 PROJ_ROOT = ../..
-PLATFORM_PATH = platform/nucleo-board-stm32f334r8/
+PLATFORM_PATH = platform/nucleo-board-stm32f446re/
 
 # QUIET = 1: dont show compiler calls
 QUIET = 0
@@ -57,7 +57,7 @@ LDSCRIPT = ./linkerscript.ld
 CFLAGS += -mthumb -march=armv7e-m -mtune=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16
 LFLAGS += -mthumb -march=armv7e-m -mtune=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
-DEFINES += -DSTM32F3
+DEFINES += -DSTM32F4
 OPTIMIZATION = -Og
 DEBUGGING = -g
 WARNINGS = -Wall -Wextra -Wno-unused-parameter
@@ -87,7 +87,7 @@ CCFLAGS += -std=gnu11
 #CXXFLAGS += -fno-use-cxa-atexit
 
 # Libraries to link with
-LIBOPENCM3 = opencm3_stm32f3
+LIBOPENCM3 = opencm3_stm32f4
 LIBOPENCM3_PATH = $(PROJ_ROOT)/libopencm3
 LIBOPENCM3_LD = $(LIBOPENCM3_PATH)/lib/lib$(LIBOPENCM3).ld
 
