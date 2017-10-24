@@ -21,44 +21,105 @@ extern "C" {
 #define GPIO_PORT_LED2  GPIOA
 #define GPIO_PIN_LED2   GPIO5
 
-/*
+/**
  * Configure which CAN peripheral to use
  */
 //#define USE_CAN1
 #define USE_CAN2
 
+/**
+ * Configure which GPIO pins to use as CAN RX and TX
+ */
+#ifdef USE_CAN1
+#define CAN_USE_PINS_PA11_PA12
+//#define CAN_USE_PINS_PD0_PD1
+#endif
+
+#ifdef USE_CAN2
+//#define CAN_USE_PINS_PB5_PB6
+#define CAN_USE_PINS_PB12_PB13
+//#define CAN_USE_PINS_ST_BOOTLOADER
+#endif
+
+/**
+ * Alternate function configuration
+ * for the GPIOs in order to be used as CAN RX/TX
+ */
+#define GPIO_AF_CAN         GPIO_AF9
+
 /*
- * Pin configuration when using CAN1:
- *   CAN1_RX <-> PB8
- *   CAN1_TX <-> PB9
+ * Pin configuration when using CAN1
  */
 #ifdef USE_CAN1
 #define CAN                 CAN1
-#define GPIO_PORT_CAN_RX    GPIOB
-#define GPIO_PIN_CAN_RX     GPIO8
-#define GPIO_PORT_CAN_TX    GPIOB
-#define GPIO_PIN_CAN_TX     GPIO9
-#define GPIO_AF_CAN         GPIO_AF9
+
+/**
+ * CAN1_RX <-> PA11
+ * CAN1_TX <-> PA12
+ */
+#ifdef CAN_USE_PINS_PA11_PA12
+#define GPIO_PORT_CAN_RX    GPIOA
+#define GPIO_PIN_CAN_RX     GPIO11
+#define GPIO_PORT_CAN_TX    GPIOA
+#define GPIO_PIN_CAN_TX     GPIO12
 #endif
 
+/**
+ * CAN1_RX <-> PD0
+ * CAN1_TX <-> PD1
+ */
+#ifdef CAN_USE_PINS_PD0_PD1
+#define GPIO_PORT_CAN_RX    GPIOD
+#define GPIO_PIN_CAN_RX     GPIO0
+#define GPIO_PORT_CAN_TX    GPIOD
+#define GPIO_PIN_CAN_TX     GPIO1
+#endif
+#endif // USE_CAN1
+
 /*
- * Pin configuration when using CAN2:
- *   CAN2_RX <-> PB5
- *   CAN2_TX <-> PB13
- *
- * This pin configuration is compatible with ST's bootloader,
- * which is present in the microcontroller's ROM.
+ * Pin configuration when using CAN2
  */
 #ifdef USE_CAN2
 #define CAN                 CAN2
+
+/**
+ * CAN2_RX <-> PB5
+ * CAN2_TX <-> PB6
+ */
+#ifdef CAN_USE_PINS_PB5_PB6
+#define GPIO_PORT_CAN_RX    GPIOB
+#define GPIO_PIN_CAN_RX     GPIO5
+#define GPIO_PORT_CAN_TX    GPIOB
+#define GPIO_PIN_CAN_TX     GPIO6
+#endif
+
+/**
+ * CAN2_RX <-> PB12
+ * CAN2_TX <-> PB13
+ */
+#ifdef CAN_USE_PINS_PB12_PB13
+#define GPIO_PORT_CAN_RX    GPIOB
+#define GPIO_PIN_CAN_RX     GPIO12
+#define GPIO_PORT_CAN_TX    GPIOB
+#define GPIO_PIN_CAN_TX     GPIO13
+#endif
+
+/**
+ * The following pin configuration is compatible with ST's CAN bootloader,
+ * which is present in the microcontroller's ROM.
+ *
+ * CAN2_RX <-> PB5
+ * CAN2_TX <-> PB13
+ */
+#ifdef CAN_USE_PINS_ST_BOOTLOADER
 #define GPIO_PORT_CAN_RX    GPIOB
 #define GPIO_PIN_CAN_RX     GPIO5
 #define GPIO_PORT_CAN_TX    GPIOB
 #define GPIO_PIN_CAN_TX     GPIO13
-#define GPIO_AF_CAN         GPIO_AF9
 #endif
+#endif // USE_CAN2
 
-/*
+/**
  * Many CAN transceivers have an enable input,
  * which needs to be driven HIGH or LOW in order
  * for the transceiver to become operational.
