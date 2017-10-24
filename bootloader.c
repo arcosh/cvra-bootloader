@@ -78,7 +78,7 @@ void bootloader_main(int arg)
     } else {
         // exact behaviour at invalid config is not yet defined.
         strcpy(config.device_class, PLATFORM_DEVICE_CLASS);
-        strcpy(config.board_name, "foobar2000");
+        strcpy(config.board_name, "undefined");
         config.ID = DEFAULT_ID;
         config.application_crc = 0xDEADC0DE;
         config.application_size = 0;
