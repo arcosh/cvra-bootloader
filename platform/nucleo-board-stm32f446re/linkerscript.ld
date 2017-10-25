@@ -1,25 +1,23 @@
-/*
- * Linker file for the STM32F334R8 microcontroller
- * http://www.st.com/en/microcontrollers/stm32f334r8.html
+/**
+ * Linker file for the STM32F446RE microcontroller
+ * http://www.st.com/en/microcontrollers/stm32f446re.html
  *
- * 64K flash memory, 12K RAM, 4K CCRAM
- * Flash page size: 2K (= 0x800)
- *
- * TODO: Complete section definitions below with definitions for CCRAM 
+ * 512K flash memory, 128K RAM
+ * Flash page size varies between 16K (= 0x800) and 128K (= 0x20000),
+ * see also reference manual (RM0390) on page 64.
  */
 
 MEMORY
 {
-    FLASH_TEXT    (RX) : ORIGIN = 0x08000000, LENGTH = 20K
-    FLASH_CONFIG1 (RX) : ORIGIN = 0x08005000, LENGTH = 2K
-    FLASH_CONFIG2 (RX) : ORIGIN = 0x08005800, LENGTH = 2K
-    FLASH_APP     (RX) : ORIGIN = 0x08006000, LENGTH = 40K
-    RAM          (RWX) : ORIGIN = 0x20000000, LENGTH = 12K
-    CCRAM        (RWX) : ORIGIN = 0x10000000, LENGTH = 4K
+    FLASH_BOOTLOADER  (RX) : ORIGIN = 0x08000000, LENGTH = 32K
+    FLASH_CONFIG1     (RX) : ORIGIN = 0x08008000, LENGTH = 16K
+    FLASH_CONFIG2     (RX) : ORIGIN = 0x0800C000, LENGTH = 16K
+    FLASH_APP         (RX) : ORIGIN = 0x08010000, LENGTH = 448K
+    RAM              (RWX) : ORIGIN = 0x20000000, LENGTH = 128K
 }
 
-REGION_ALIAS("REGION_TEXT",   FLASH_TEXT);
-REGION_ALIAS("REGION_RODATA", FLASH_TEXT);
+REGION_ALIAS("REGION_TEXT",   FLASH_BOOTLOADER);
+REGION_ALIAS("REGION_RODATA", FLASH_BOOTLOADER);
 REGION_ALIAS("REGION_DATA",   RAM);
 REGION_ALIAS("REGION_BSS",    RAM);
 REGION_ALIAS("REGION_NOINIT", RAM);
@@ -31,7 +29,7 @@ ENTRY(reset_handler)
 SECTIONS
 {
     /* flash memory boundaries */
-    flash_begin = ORIGIN(FLASH_TEXT);
+    flash_begin = ORIGIN(FLASH_BOOTLOADER);
     flash_end = ORIGIN(FLASH_APP) + LENGTH(FLASH_APP);
 
     /* RAM boundaries */
