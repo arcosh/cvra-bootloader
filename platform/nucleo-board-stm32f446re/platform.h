@@ -31,7 +31,8 @@ extern "C" {
  * Configure which GPIO pins to use as CAN RX and TX
  */
 #ifdef USE_CAN1
-#define CAN_USE_PINS_PA11_PA12
+#define CAN_USE_PINS_PB8_PB9
+//#define CAN_USE_PINS_PA11_PA12
 //#define CAN_USE_PINS_PD0_PD1
 #endif
 
@@ -54,8 +55,19 @@ extern "C" {
 #define CAN                 CAN1
 
 /**
- * CAN1_RX <-> PA11
- * CAN1_TX <-> PA12
+ * CAN1_RX <- PB8
+ * CAN1_TX -> PB9
+ */
+#ifdef CAN_USE_PINS_PB8_PB9
+#define GPIO_PORT_CAN_RX    GPIOB
+#define GPIO_PIN_CAN_RX     GPIO8
+#define GPIO_PORT_CAN_TX    GPIOB
+#define GPIO_PIN_CAN_TX     GPIO9
+#endif
+
+/**
+ * CAN1_RX <- PA11
+ * CAN1_TX -> PA12
  */
 #ifdef CAN_USE_PINS_PA11_PA12
 #define GPIO_PORT_CAN_RX    GPIOA
@@ -65,8 +77,8 @@ extern "C" {
 #endif
 
 /**
- * CAN1_RX <-> PD0
- * CAN1_TX <-> PD1
+ * CAN1_RX <- PD0
+ * CAN1_TX -> PD1
  */
 #ifdef CAN_USE_PINS_PD0_PD1
 #define GPIO_PORT_CAN_RX    GPIOD
@@ -83,8 +95,8 @@ extern "C" {
 #define CAN                 CAN2
 
 /**
- * CAN2_RX <-> PB5
- * CAN2_TX <-> PB6
+ * CAN2_RX <- PB5
+ * CAN2_TX -> PB6
  */
 #ifdef CAN_USE_PINS_PB5_PB6
 #define GPIO_PORT_CAN_RX    GPIOB
@@ -94,8 +106,8 @@ extern "C" {
 #endif
 
 /**
- * CAN2_RX <-> PB12
- * CAN2_TX <-> PB13
+ * CAN2_RX <- PB12
+ * CAN2_TX -> PB13
  */
 #ifdef CAN_USE_PINS_PB12_PB13
 #define GPIO_PORT_CAN_RX    GPIOB
@@ -108,8 +120,8 @@ extern "C" {
  * The following pin configuration is compatible with ST's CAN bootloader,
  * which is present in the microcontroller's ROM.
  *
- * CAN2_RX <-> PB5
- * CAN2_TX <-> PB13
+ * CAN2_RX <- PB5
+ * CAN2_TX -> PB13
  */
 #ifdef CAN_USE_PINS_ST_BOOTLOADER
 #define GPIO_PORT_CAN_RX    GPIOB
