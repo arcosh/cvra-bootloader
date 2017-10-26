@@ -68,7 +68,17 @@ static void return_datagram(uint8_t source_id, uint8_t dest_id, uint8_t *data, s
 
 void bootloader_main(int arg)
 {
-    bool timeout_active = !(arg == BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
+    /**
+     * Switch determining whether the bootloader should
+     * automatically proceed with starting the app after a timeout
+     * or remain listening for commands on the CAN bus forever
+     */
+    bool timeout_enabled;
+    #ifdef BOOTLOADER_TIMEOUT_DISABLE
+    timeout_enabled = false;
+    #else
+    timeout_enabled = !(arg == BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
+    #endif
 
     bootloader_config_t config;
     if (config_is_valid(memory_get_config1_addr(), CONFIG_PAGE_SIZE)) {
@@ -101,13 +111,21 @@ void bootloader_main(int arg)
      * until a jump to the main application is requested via the appropriate CAN command.
      */
     while (true) {
-        // Until flash writes are working with the STM32F334R8, do not timeout / jump to main application
-//        if (timeout_active && timeout_reached()) {
-//            command_jump_to_application(0, NULL, NULL, &config);
-//        }
+        if (timeout_enabled && timeout_reached()) {
+            command_jump_to_application(0, NULL, NULL, &config);
+        }
 
-        // TODO: Conserve energy by sleeping until a CAN frame is received; requires CAN interrupts to be enabled
-//        asm("wfi");
+        #ifdef BOOTLOADER_SLEEP_UNTIL_INTERRUPT
+        /*
+         * Conserve energy by putting the processor to sleep until a CAN frame is received
+         *
+         * Note:
+         *  - Requires CAN RX0 (reception in FIFO0) interrupt to be enabled
+         *  - Might interfer with the above timeout functionality,
+         *    except if the timeout is realized via a timer peripheral i.e. interrupt
+         */
+        asm("wfi");
+        #endif
 
         if (!can_interface_read_message(&id, data, &data_length, CAN_RECEIVE_TIMEOUT)) {
             continue;
@@ -126,14 +144,14 @@ void bootloader_main(int arg)
 
         if (can_datagram_is_complete(&dt)) {
             if (can_datagram_is_valid(&dt)) {
-                timeout_active = false;
 
                 // Check, if this nodes's ID is amongst the datagram's target IDs
                 bool addressed = false;
                 int i;
                 for (i = 0; i < dt.destination_nodes_len; i++) {
                     if (dt.destination_nodes[i] == config.ID) {
-                        timeout_active = false;
+                        // Disable bootloader timeout
+                        timeout_enabled = false;
                         addressed = true;
                         break;
                     }
