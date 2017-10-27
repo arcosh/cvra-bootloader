@@ -60,12 +60,20 @@ void led_blink()
 
 void can_interface_init(void)
 {
-    // Enable clock to GPIO port A and B
-    #if (GPIO_PORT_CAN_TX == GPIOA) || (GPIO_PORT_CAN_RX == GPIOA) || (GPIO_PORT_CAN_ENABLE == GPIOA)
+    /*
+     * Enable clock on required GPIO ports
+     */
+    #if (GPIO_PORT_CAN_TX == GPIOA) || (GPIO_PORT_CAN_RX == GPIOA) || (defined(USE_CAN_ENABLE) && GPIO_PORT_CAN_ENABLE == GPIOA)
     rcc_periph_clock_enable(RCC_GPIOA);
     #endif
-    #if (GPIO_PORT_CAN_TX == GPIOB) || (GPIO_PORT_CAN_RX == GPIOB) || (GPIO_PORT_CAN_ENABLE == GPIOB)
+    #if (GPIO_PORT_CAN_TX == GPIOB) || (GPIO_PORT_CAN_RX == GPIOB) || (defined(USE_CAN_ENABLE) && GPIO_PORT_CAN_ENABLE == GPIOB)
     rcc_periph_clock_enable(RCC_GPIOB);
+    #endif
+    #if (GPIO_PORT_CAN_TX == GPIOC) || (GPIO_PORT_CAN_RX == GPIOC) || (defined(USE_CAN_ENABLE) && GPIO_PORT_CAN_ENABLE == GPIOC)
+    rcc_periph_clock_enable(RCC_GPIOC);
+    #endif
+    #if (GPIO_PORT_CAN_TX == GPIOD) || (GPIO_PORT_CAN_RX == GPIOD) || (defined(USE_CAN_ENABLE) && GPIO_PORT_CAN_ENABLE == GPIOD)
+    rcc_periph_clock_enable(RCC_GPIOD);
     #endif
 
     /*
