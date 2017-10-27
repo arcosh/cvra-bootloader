@@ -285,7 +285,8 @@ def elf_extract_start_address(filename):
     for section in find_section_names:
         # Search for section name in objdump output using regular expressions
         # ID  Name  Size  VMA ...
-        m = search("[ \t]+[0-9]+\s+" + section + "\s+[0-9]+\s+([0-9x]*)", lines)
+        section_escaped = section.replace(".", "\.")
+        m = search("[ \t0-9]*" + section_escaped + "\s+[x0-9a-fA-F]*\s+([x0-9a-fA-F]*)", lines)
         if m is None:
             # not found
             continue
