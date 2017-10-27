@@ -15,6 +15,13 @@ extern "C" {
 
 #define PLATFORM_DEVICE_CLASS "nucleo-board-stm32f446re"
 
+/**
+ * Prevent bootloader from booting the app after a timeout occured;
+ * instead wait for CAN input forever and only boot the app,
+ * when being instructed to do so via the appropriate CAN command.
+ */
+#define BOOTLOADER_TIMEOUT_DISABLE
+
 /*
  * Flash sector sizes are listed in a table
  * in RM0390 Rev.3 on page 64
