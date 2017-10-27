@@ -14,8 +14,15 @@ extern "C" {
 #include <stddef.h>
 
 #define PLATFORM_DEVICE_CLASS "nucleo-board-stm32f446re"
-#define FLASH_PAGE_SIZE 0x0800 // 2K
-#define CONFIG_PAGE_SIZE FLASH_PAGE_SIZE
+
+/*
+ * Flash sector sizes are listed in a table
+ * in RM0390 Rev.3 on page 64
+ */
+#define FLASH_PAGE_SIZE_MIN         0x4000  // 16K
+#define FLASH_PAGE_SIZE_MAX         0x20000 // 128K
+#define FLASH_PAGE_SIZE_CONFIG1     0x4000  // 16K
+#define FLASH_PAGE_SIZE_CONFIG2     0x4000  // 16K
 
 // Onboard LED
 #define GPIO_PORT_LED2  GPIOA
