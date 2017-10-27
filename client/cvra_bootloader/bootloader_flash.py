@@ -87,7 +87,7 @@ def flash_image(connection, binary, base_address, device_class, destinations,
 
         if args.verbose:
             node_count = len(res.items())
-            logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ",".join([str(id) + "=" + ("ok" if success == 1 else "failed") for id, success in res.items()]))
+            logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
             for id, status in res.items():
                 code = msgpack.unpackb(status)
                 msg = "Board " + str(id) + " replied with status code: " + str(code)
@@ -135,7 +135,7 @@ def flash_image(connection, binary, base_address, device_class, destinations,
 
         if args.verbose:
             node_count = len(res.items())
-            logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ",".join([str(id) + "=" + ("ok" if success == 1 else "failed") for id, success in res.items()]))
+            logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
             for id, status in res.items():
                 code = msgpack.unpackb(status)
                 msg = "Board " + str(id) + " replied with status code: " + str(code)
