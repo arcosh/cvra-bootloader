@@ -1,7 +1,6 @@
 import serial
 import socket
 import argparse
-import time
 from sys import exit
 
 from cvra_bootloader import commands
@@ -95,8 +94,6 @@ def open_connection(args):
 
 def read_can_datagrams(connection):
     buf = defaultdict(lambda: bytes())
-    # TODO: Implement better performing wait and timeout function, maybe with resend option
-    time.sleep(0.6)
     while True:
         datagram = None
         while datagram is None:
