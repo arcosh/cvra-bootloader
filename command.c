@@ -199,9 +199,8 @@ void command_crc_region(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_co
      || address2 < (uint32_t) (&flash_begin) || address2 >= (uint32_t) (&flash_end))
     {
         // TODO: The above statement is true, although it should return false
-//        cmp_write_uint(out, CRC_ERROR_ILLEGAL_ADDRESS);
-//        return;
-        asm("nop");
+        cmp_write_uint(out, CRC_ERROR_ILLEGAL_ADDRESS);
+        return;
     }
 
     crc = crc32(0, address, size);
