@@ -134,12 +134,12 @@ void can_interface_init(void)
     #endif // USE_CAN_ENABLE
 
     /*
-    CAN1 and CAN2 are running from APB1 clock (18MHz).
-    Therefore 500kbps can be achieved with prescaler=2 like this:
-    18MHz / 2 = 9MHz
-    9MHz / (1tq + 10tq + 7tq) = 500kHz => 500kbit
-    */
-    can_init(CAN,            // Interface
+     * CAN1 and CAN2 are running from APB1 clock (18MHz).
+     * Therefore 500kbps can be achieved with prescaler=2 like this:
+     * 18MHz / 2 = 9MHz
+     * 9MHz / (1tq + 10tq + 7tq) = 500kHz => 500kbit
+     */
+    can_init(CAN,             // Interface
              false,           // Time triggered communication mode.
              true,            // Automatic bus-off management.
              false,           // Automatic wakeup mode.
@@ -153,11 +153,56 @@ void can_interface_init(void)
              false,           // Loopback
              false);          // Silent
 
+
+    /*
+     * A filter's bank number i.e. slave start bank number
+     * defines, at which bank number the filter banks
+     * should route incoming and matching frames to
+     * slave (CAN2) FIFOs instead of master (CAN1) FIFOs.
+     */
+    #ifdef USE_CAN1
+        // Filters should route to CAN1 FIFOs
+        uint8_t bank_number = 27;
+    #endif
+    #ifdef USE_CAN2
+        // Filters should route to CAN2 FIFOs
+        uint8_t bank_number = 0;
+    #endif
+
+    /*
+     * TODO:
+     * Workaround for incorrect shift value in libopencm3
+     * Fixed since libopencm3 commit 5fc4f4
+     */
+    #ifdef CAN_FMR_CAN2SB_SHIFT
+    #undef CAN_FMR_CAN2SB_SHIFT
+    #endif
+    #define CAN_FMR_CAN2SB_SHIFT    8
+
+    /*
+     * Configure the start slave bank
+     * by writing to the filter master register (CAN_FMR)
+     */
+    CAN_FMR(CAN1) &= ~((uint32_t) CAN_FMR_CAN2SB_MASK);
+    CAN_FMR(CAN1) |= (uint32_t) (bank_number << CAN_FMR_CAN2SB_SHIFT);
+
+    // TODO: When using a slave CAN, the master CAN may have to be configured to accept the desired frames, too.
+    #ifdef CAN1_SET_PROMISCUOUS
+    can_filter_id_mask_32bit_init(
+        CAN1,
+        0,      // filter nr
+        0,      // id: only std id, no rtr
+        0,      // mask: match only std id[10:8] = 0 (bootloader frames)
+        0,      // assign to fifo0
+        true    // enable
+    );
+    #endif
+
     // filter to match any standard id
     // mask bits: 0 = Don't care, 1 = mute match corresponding id bit
     can_filter_id_mask_32bit_init(
         CAN,
-        0,      // filter nr
+        1,      // filter nr
         0,      // id: only std id, no rtr
         6 | (7<<29), // mask: match only std id[10:8] = 0 (bootloader frames)
         0,      // assign to fifo0
