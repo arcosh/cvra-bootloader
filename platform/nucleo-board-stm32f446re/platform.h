@@ -38,14 +38,19 @@ extern "C" {
  */
 #define BOOTLOADER_TIMEOUT_DISABLE
 
-/*
- * Flash sector sizes are listed in a table
- * in RM0390 Rev.3 on page 64
+/**
+ * The STM32F446RE has eight flash sectors,
+ * see RM0390 rev.3 on page 64.
  */
-#define FLASH_PAGE_SIZE_MIN         0x4000  // 16K
-#define FLASH_PAGE_SIZE_MAX         0x20000 // 128K
-#define FLASH_PAGE_SIZE_CONFIG1     0x4000  // 16K
-#define FLASH_PAGE_SIZE_CONFIG2     0x4000  // 16K
+#define FLASH_SECTOR_INDEX_MAX      8
+
+/**
+ * The amount of flash memory (in bytes)
+ * reserved for a configuration struct,
+ * which is located at the beginning of
+ * the corresponding config page flash sector.
+ */
+#define CONFIG_PAGE_SIZE            512
 
 // Onboard LED
 #define GPIO_PORT_LED2  GPIOA
