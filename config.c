@@ -3,12 +3,12 @@
 #include <crc/crc32.h>
 #include "config.h"
 
-static uint32_t config_calculate_crc(void *page, size_t page_size)
+static inline uint32_t config_calculate_crc(void *page, size_t page_size)
 {
     return crc32(0, (uint8_t *)page + 4, page_size - 4);
 }
 
-bool config_is_valid(void *page, size_t page_size)
+static inline uint32_t config_read_crc(void *page)
 {
     uint32_t crc = 0;
     uint8_t *p = page;
@@ -16,7 +16,17 @@ bool config_is_valid(void *page, size_t page_size)
     crc |= p[1] << 16;
     crc |= p[2] << 8;
     crc |= p[3] << 0;
-    return crc == config_calculate_crc(page, page_size);
+    return crc;
+}
+
+bool config_is_valid(void *page, size_t page_size)
+{
+    // Make sure, the given address lies within the flash memory boundaries
+    extern uint32_t flash_begin, flash_end;
+    if ((uint32_t) page < (uint32_t) (&flash_begin) || (uint32_t) page > (uint32_t) (&flash_end))
+        return false;
+
+    return (config_read_crc(page) == config_calculate_crc(page, page_size));
 }
 
 void config_write(void *buffer, bootloader_config_t *config, size_t buffer_size)
