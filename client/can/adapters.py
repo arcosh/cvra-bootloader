@@ -4,6 +4,9 @@ import struct
 import serial
 from queue import Queue
 import threading
+import errno
+import logging
+from sys import exit
 
 class SocketCANConnection:
     # See <linux/can.h> for format
@@ -31,15 +34,26 @@ class SocketCANConnection:
                            len(frame.data),
                            data)
 
-        self.socket.send(data)
+        try:
+            self.socket.send(data)
+        except socket.timeout:
+            logging.debug("Socket transmission timed out")
+            pass
+        except OSError as e:
+            if e.errno == errno.ENOBUFS:
+                logging.critical("Transmission buffer overflow. Probably CAN frames are not being acknowledged properly on the bus. Please connect the CAN adapter to a network.")
+                exit(errno.ENOBUFS)
+            else:
+                raise e
 
     def receive_frame(self):
         try:
             frame, _ = self.socket.recvfrom(self.CAN_FRAME_SIZE)
         except socket.timeout:
+            logging.debug("Socket reception timed out")
             return None
         can_id, can_dlc, data = struct.unpack(self.CAN_FRAME_FMT, frame)
-
+        logging.debug("Received")
         return can.Frame(id=can_id, data=data[:can_dlc])
 
 class SerialCANConnection:

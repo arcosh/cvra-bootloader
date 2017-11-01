@@ -74,7 +74,13 @@ def decode_datagram(data):
             raise CRCMismatchError
 
     except struct.error:
-        # This means that we have not enough bytes to decode somewhere
+        # This means that we have not enough bytes to decode a datagram
+        return None
+    except VersionMismatchError:
+        can.adapters.logging.debug("Rejected datagram with unexpected version ", version, " instead of ", DATAGRAM_VERSION, ".")
+        return None
+    except CRCMismatchError:
+        can.adapters.logging.debug("Rejected datagram with incorrect CRC.")
         return None
 
     return data, destinations

@@ -80,6 +80,10 @@ def open_connection(args):
 
     Returns a file like object which will be the connection handle.
     """
+
+    # Propagate loglevel to adapters.py
+    can.adapters.logging.getLogger().setLevel(logging.getLogger().level)
+
     if args.can_interface:
         logging.debug("Opening SocketCAN connection...")
         return can.adapters.SocketCANConnection(args.can_interface)
