@@ -12,8 +12,6 @@ extern "C" {
 #define FLASH_PAGE_SIZE 2048
 #define CONFIG_PAGE_SIZE FLASH_PAGE_SIZE
 
-extern uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
-
 // symbols defined in linkerscript
 extern int application_address, application_size, config_page1, config_page2;
 

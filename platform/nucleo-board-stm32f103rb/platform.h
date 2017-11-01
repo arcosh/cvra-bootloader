@@ -13,8 +13,6 @@ extern "C" {
 #define CONFIG_PAGE_SIZE FLASH_PAGE_SIZE
 #define PIN_LED2 GPIO5  
 #define PORT_LED2 GPIOA  
-	
-extern uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
 
 // symbols defined in linkerscript
 extern int application_address, application_size, config_page1, config_page2;

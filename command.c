@@ -236,6 +236,8 @@ void command_config_write_to_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bo
 {
     config->update_count += 1;
 
+    static uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
+
     memset(config_page_buffer, 0, CONFIG_PAGE_SIZE);
 
     config_write(config_page_buffer, config, CONFIG_PAGE_SIZE);

@@ -15,8 +15,6 @@ extern "C" {
 // Select, which CAN peripheral should be used
 #define CAN     CAN1
 
-extern uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
-
 // symbols defined in linkerscript
 extern int application_address, application_size, config_page1, config_page2;
 

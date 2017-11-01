@@ -8,8 +8,6 @@
 #include <platform/mcu/armv7-m/timeout_timer.h>
 #include "platform.h"
 
-// page buffer used by config commands.
-uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
 
 void can_interface_init(void)
 {

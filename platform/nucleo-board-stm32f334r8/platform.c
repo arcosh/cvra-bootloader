@@ -14,10 +14,6 @@
 #include "platform.h"
 
 
-// page buffer used by config commands.
-uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
-
-
 void led_init()
 {
     #if (GPIO_PORT_LED2 == GPIOA)

@@ -183,9 +183,7 @@ extern "C" {
 #endif
 
 // Import symbols from linker script
-extern uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
 extern int application_address, application_size, config_page1, config_page2;
-
 
 static inline void *memory_get_app_addr(void)
 {

@@ -13,9 +13,6 @@
 #define GPIOA_CAN_RX GPIO11
 #define GPIOA_CAN_TX GPIO12
 
-// page buffer used by config commands.
-uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
-
 void can_interface_init(void)
 {
     rcc_periph_clock_enable(RCC_CAN);

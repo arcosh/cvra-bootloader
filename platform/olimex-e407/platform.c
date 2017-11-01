@@ -12,8 +12,6 @@
 #define GPIOD_CAN1_RX GPIO0
 #define GPIOD_CAN1_TX GPIO1
 
-// page buffer used by config commands.
-uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
 
 void can_interface_init(void)
 {
