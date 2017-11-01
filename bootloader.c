@@ -25,6 +25,16 @@
 #define DEFAULT_ID  1
 #endif
 
+#ifndef PLATFORM_DEFAULT_NAME
+/**
+ * The default name the bootloader begins a new configuration
+ * with in case no usable configuration is found
+ *
+ * This macro can be overwritten in platform.h.
+ */
+#define PLATFORM_DEFAULT_NAME   "undefined"
+#endif
+
 /**
  * Maximum number of transmission retries
  * upon CAN transmission failure
@@ -110,9 +120,7 @@ void bootloader_main(int arg)
     } else {
         // exact behaviour at invalid config is not yet defined.
         strcpy(config.device_class, PLATFORM_DEVICE_CLASS);
-//        TODO: Implement platform-specific default names
-//        strcpy(config.board_name, platform_get_default_name());
-        strcpy(config.board_name, "undefined");
+        strcpy(config.board_name, PLATFORM_DEFAULT_NAME);
         config.ID = DEFAULT_ID;
         config.application_crc = 0xDEADC0DE;
         config.application_size = 0;

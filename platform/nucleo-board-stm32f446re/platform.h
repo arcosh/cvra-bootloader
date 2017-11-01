@@ -13,7 +13,23 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
-#define PLATFORM_DEVICE_CLASS "nucleo-board-stm32f446re"
+#define PLATFORM_DEVICE_CLASS       "nucleo-board-stm32f446re"
+
+/*
+ * Generate the default board name from the STM32's serial number
+ *
+ * This feature is currently not enabled, because the resulting
+ * bootloader image does not fit into flash anymore with it.
+ */
+//#define PLATFORM_ENABLE_UUID
+
+#ifdef PLATFORM_ENABLE_UUID
+#include <libopencm3/cm3/common.h>  // MMIO
+#include <libopencm3/stm32/f4/memorymap.h>  // Unique ID
+#include <stdio.h>  // sprintf()
+
+#define PLATFORM_DEFAULT_NAME       platform_get_default_name()
+#endif
 
 /**
  * Prevent bootloader from booting the app after a timeout occured;
@@ -191,6 +207,17 @@ static inline void *memory_get_config2_addr(void)
     return (void *) &config_page2;
 }
 
+#ifdef PLATFORM_ENABLE_UUID
+/**
+ * The default board name to set in a brand new config page
+ */
+static inline char* platform_get_default_name()
+{
+    static char s[64];
+    sprintf(s, "Nucleo-F446 Serial No. %x-%x-%x", DESIG_UNIQUE_ID0, DESIG_UNIQUE_ID1, DESIG_UNIQUE_ID2);
+    return s;
+}
+#endif // PLATFORM_ENABLE_UUID
 
 #ifdef __cplusplus
 }
