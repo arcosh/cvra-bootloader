@@ -9,19 +9,38 @@
 #include "timeout.h"
 #include "can_interface.h"
 
-#define BUFFER_SIZE         FLASH_PAGE_SIZE + 128
-#define DEFAULT_ID          0x01
+// TODO: How big can one incoming datagram become?
+#define INPUT_BUFFER_SIZE       8192
+
+// TODO: How big can one outgoing datagram become?
+#define OUTPUT_BUFFER_SIZE      8192
+
+/**
+ * The default ID the bootloader assumes,
+ * when no config page is available
+ *
+ * This value can be overwritten in platform.h.
+ */
+#ifndef DEFAULT_ID
+#define DEFAULT_ID  1
+#endif
+
+/**
+ * Maximum number of transmission retries
+ * upon CAN transmission failure
+ */
 #define CAN_SEND_RETRIES    100
+
+/**
+ * Maximum number of times, the CAN RX FIFO
+ * is polled (in immediate successsion)
+ * for new, incoming messages
+ */
 #define CAN_RECEIVE_TIMEOUT 1000
-
-uint8_t output_buf[BUFFER_SIZE];
-uint8_t data_buf[BUFFER_SIZE];
-uint8_t addr_buf[128];
-
 
 /**
  * List of commands supported by this firmware
- * defined in command.c
+ * as defined in command.c
  */
 extern command_t commands[COMMAND_COUNT];
 
@@ -80,6 +99,9 @@ void bootloader_main(int arg)
     timeout_enabled = !(arg == BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
     #endif
 
+    /**
+     * Struct holding the bootloader's configuration
+     */
     bootloader_config_t config;
     if (config_is_valid(memory_get_config1_addr(), CONFIG_PAGE_SIZE)) {
         config = config_read(memory_get_config1_addr(), CONFIG_PAGE_SIZE);
@@ -88,6 +110,8 @@ void bootloader_main(int arg)
     } else {
         // exact behaviour at invalid config is not yet defined.
         strcpy(config.device_class, PLATFORM_DEVICE_CLASS);
+//        TODO: Implement platform-specific default names
+//        strcpy(config.board_name, platform_get_default_name());
         strcpy(config.board_name, "undefined");
         config.ID = DEFAULT_ID;
         config.application_crc = 0xDEADC0DE;
@@ -95,20 +119,47 @@ void bootloader_main(int arg)
         config.update_count = 1;
     }
 
+    /**
+     * Struct to store the properties of an incoming datagram
+     */
     can_datagram_t dt;
+    /**
+     * Buffer storing the list of destination nodes of a datagram
+     */
+    uint8_t addr_buf[128];
+    /**
+     * Buffer to store an incoming datagram
+     */
+    uint8_t data_buf[INPUT_BUFFER_SIZE];
+    /**
+     * Buffer to store the (at max.) 8 data bytes of the received CAN frame
+     */
+    uint8_t data[8];
+    /**
+     * Number of actually received data bytes in this CAN frame
+     */
+    uint8_t data_length;
+    /**
+     * Destination ID of the received CAN frame
+     */
+    uint32_t id;
+    /**
+     * Buffer for the construction of the response datagram
+     */
+    uint8_t output_buf[OUTPUT_BUFFER_SIZE];
+    /**
+     * Size of the response datagram in bytes
+     */
+    uint8_t reply_length;
+
     can_datagram_init(&dt);
     can_datagram_set_address_buffer(&dt, addr_buf);
     can_datagram_set_data_buffer(&dt, data_buf, sizeof(data_buf));
     can_datagram_start(&dt);
 
-    uint8_t data[8];
-    uint32_t id;
-    uint8_t data_length;
-    uint8_t reply_length;
-
     /*
-     * Remain in the bootloader until timeout is reached or respectively
-     * until a jump to the main application is requested via the appropriate CAN command.
+     * Remain in the bootloader until either timeout is reached or a jump
+     * to the main application is requested via the appropriate CAN command.
      */
     while (true) {
         if (timeout_enabled && timeout_reached()) {
@@ -127,16 +178,18 @@ void bootloader_main(int arg)
         asm("wfi");
         #endif
 
+        // Poll CAN reception FIFO for incoming frames
         if (!can_interface_read_message(&id, data, &data_length, CAN_RECEIVE_TIMEOUT)) {
+            // No frames were received
             continue;
         }
 
-        // Begin a new, empty datagram
+        // Begin constructing a new, empty reception datagram
         if ((id & ID_START_MASK) != 0) {
             can_datagram_start(&dt);
         }
 
-        // Append frame bytes to current datagram
+        // Append frame bytes to current reception datagram
         int i;
         for (i = 0; i < data_length; i++) {
             can_datagram_input_byte(&dt, data[i]);
