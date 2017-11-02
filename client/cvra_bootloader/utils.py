@@ -97,24 +97,40 @@ def read_can_datagrams(connection):
     while True:
         datagram = None
         while datagram is None:
+            # Receive from socket
             frame = connection.receive_frame()
 
             if frame is None:
+                # Did not receive a CAN frame
                 yield None
                 continue
 
             if frame.extended:
+                # The bootloader doesn't use extended IDs
                 continue
 
+            # Received a CAN frame
+
+            # Source ID is bits[6:0], see PROTOCOL.markdown
             src = frame.id & (0x7f)
+            # Datagram start bit set?
+            if (len(buf) > 0) and (src in buf.keys()) and (frame.id & 0x080 > 0):
+                # Begin new datagram
+                del buf[src]
+
+            # Append frame bytes to the buffer of the corresponding ID
             buf[src] += frame.data
 
+            # Attempt to decode buffer as datagram
             datagram = can.decode_datagram(buf[src])
 
             if datagram is not None:
+                # Begin new datagram
                 del buf[src]
+                # Save decoded datagram
                 data, dst = datagram
 
+        # Yield decoded datagram
         yield data, dst, src
 
 
