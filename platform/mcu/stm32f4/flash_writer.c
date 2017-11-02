@@ -79,6 +79,7 @@ static uint8_t flash_address_to_sector(uint32_t addr)
  *
  * TODO: This function does not support dual bank flash memory.
  */
+/*
 static uint32_t flash_get_sector_start(uint32_t address)
 {
     // Check, if ddress is outside flash memory boundaries
@@ -110,7 +111,7 @@ static uint32_t flash_get_sector_start(uint32_t address)
     // Sector 0
     return 0x08000000;
 }
-
+*/
 
 /**
  * Returns the size of the flash memory sector for this address
