@@ -11,8 +11,7 @@ PLATFORM_CSRC = platform.c
 PROJ_ROOT = ../..
 PLATFORM_PATH = platform/nucleo-board-stm32f334r8/
 
-# QUIET = 1: dont show compiler calls
-QUIET = 0
+include ../verbosity.mk
 
 ################################################################################
 
@@ -27,18 +26,6 @@ NM  = arm-none-eabi-nm
 SZ  = arm-none-eabi-size
 
 MKDIR = mkdir -p
-
-ifdef NO_COLOR
-PRINT = @printf "%s\n"
-else
-ANSI_RED = \033[1;31m
-ANSI_RESET = \033[0m
-PRINT = @printf "$(ANSI_RED)%s$(ANSI_RESET)\n"
-endif
-
-ifeq ($(QUIET),1)
-Q = @
-endif
 
 ################################################################################
 

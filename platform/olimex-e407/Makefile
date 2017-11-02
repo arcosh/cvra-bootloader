@@ -13,8 +13,7 @@ PLATFORM_CSRC = platform.c
 PROJ_ROOT = ../..
 PLATFORM_PATH = platform/olimex-e407/
 
-# dont show compiler calls
-QUIET = 1
+include ../verbosity.mk
 
 #
 # low level settings
@@ -81,14 +80,6 @@ NM  = arm-none-eabi-nm
 SZ  = arm-none-eabi-size
 
 MKDIR = mkdir -p
-
-COLOR = \033[1;31m
-COLOR_CLEAR = \033[0m
-PRINT = @printf "$(COLOR)%s$(COLOR_CLEAR)\n"
-
-ifeq ($(QUIET),1)
-Q = @
-endif
 
 #
 # targets:
