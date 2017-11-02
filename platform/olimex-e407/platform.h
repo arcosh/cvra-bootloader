@@ -12,6 +12,12 @@ extern "C" {
 #define FLASH_PAGE_SIZE 0x4000 // 16K
 #define CONFIG_PAGE_SIZE FLASH_PAGE_SIZE
 
+/**
+ * The maximum sector valid flash sector index
+ * according to RM0090 Rev.15 p.75
+ */
+#define FLASH_SECTOR_INDEX_MAX 11
+
 // Select, which CAN peripheral should be used
 #define CAN     CAN1
 
