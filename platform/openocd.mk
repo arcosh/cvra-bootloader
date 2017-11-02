@@ -1,5 +1,6 @@
-
+#
 # make targets for flashing with openocd
+#
 
 .PHONY: flash
 flash: all
