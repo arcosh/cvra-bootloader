@@ -42,6 +42,7 @@ CFLAGS   += -mthumb -mcpu=cortex-m3 -march=armv7-m
 LFLAGS   += -mthumb -mcpu=cortex-m3 -march=armv7-m
 
 # C & C++ compiler flags
+CFLAGS   += -std=gnu11
 CFLAGS   += -fno-common -ffunction-sections -fdata-sections
 CFLAGS   += $(OPTIMIZATION) -g  -Wall -Wextra -Wno-unused-parameter
 CFLAGS   += $(DEFS) -fomit-frame-pointer -MD
