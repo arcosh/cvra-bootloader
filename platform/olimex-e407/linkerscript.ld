@@ -23,6 +23,12 @@ ENTRY(reset_handler)
 
 SECTIONS
 {
+    /* memory boundaries */
+    flash_begin = ORIGIN(FLASH_TEXT);
+    flash_end   = ORIGIN(FLASH_APP) + LENGTH(FLASH_APP);
+    ram_begin   = ORIGIN(RAM);
+    ram_end     = ORIGIN(RAM) + LENGTH(RAM);
+
     /* config flash page */
     config_page1 = ORIGIN(FLASH_CONFIG1);
     config_page2 = ORIGIN(FLASH_CONFIG2);
