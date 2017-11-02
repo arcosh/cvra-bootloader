@@ -151,32 +151,38 @@ def write_command(connection, command, destinations, source=0):
         connection.send_frame(frame)
 
 
-def write_command_retry(connection, command, destinations, source=0, retry_limit=3):
+def write_command_retry(connection, command, destinations, source=0, retry_limit=3, error_exit=True):
     """
-    Writes a command, retries as long as there is no answer and returns a dictionnary containing
+    Writes a command, retries as long as there is no answer and returns a dictionary containing
     a map of each board ID and its answer.
     """
     logging.debug("Initiating transmission (attempt 1/" + str(1 + retry_limit) + ")...")
     write_command(connection, command, destinations, source)
+
+    # Instantiate a datagram yielder
     reader = read_can_datagrams(connection)
+
     answers = dict()
-
     retry_count = 0
-
     while len(answers) < len(destinations):
-        # Iterate over the replies
+        # Attempt to yield a datagram from the CAN bus
         dt = next(reader)
 
-        # If we have a timeout, retry on some boards
+        # Did we receive something?
         if dt is None:
+            # If there's a timeout, determine which boards didn't answer.
             timedout_boards = list(set(destinations) - set(answers))
-            msg = "The following boards did not answer: {}".format(" ".join(str(t) for t in timedout_boards))
+            msg = "The following destinations did not answer: {}".format(", ".join(str(t) for t in timedout_boards))
             logging.warning(msg)
 
             # Retry limit reached?
-            if retry_count == retry_limit:
-                logging.critical("No reply and retry limit reached. Aborting.")
-                exit(1)
+            if retry_count >= retry_limit:
+                if error_exit:
+                    logging.critical("No reply and retry limit reached. Aborting.")
+                    exit(1)
+                else:
+                    logging.critical("No reply and retry limit reached. Skipping.")
+                    return answers
 
             # Retry
             logging.debug("Retrying transmission (attempt " + str(retry_count + 2) + "/" + str(1 + retry_limit) + ")...")

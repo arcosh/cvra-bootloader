@@ -67,6 +67,8 @@ def flash_image(connection, binary, base_address, device_class, destinations,
     parameters.
     """
 
+    errors_occured = False
+
     print("Erasing pages...")
     pbar = ProgressBar(maxval=len(binary)).start()
 
@@ -79,7 +81,11 @@ def flash_image(connection, binary, base_address, device_class, destinations,
         # Instruct all destinations to erase a certain flash page
         erase_command = commands.encode_erase_flash_page(base_address + offset,
                                                          device_class)
-        res = utils.write_command_retry(connection, erase_command, destinations)
+
+        # Failing to receive a reply does not need to result in program exit during flash erase.
+        # The erase frame might have been received and applied properly.
+        # If not, the flash write and checksum process will fail anyway.
+        res = utils.write_command_retry(connection, erase_command, destinations, retry_limit=5, error_exit=False)
 
         # Treat the one byte replies of every node as boolean: 1=success, 0=erase failed
         failed_boards = [str(id) for id, status in res.items()
@@ -111,9 +117,9 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                 # Otherwise log message ends up in progressbar
                 print("")
             msg = ", ".join(failed_boards)
-            msg = "The following board" + ("s" if len(failed_boards) != 1 else "") + " failed to erase flash pages: {}. Aborting.".format(msg)
+            msg = "The following board" + ("s" if len(failed_boards) != 1 else "") + " failed to erase flash pages: {}".format(msg)
             logging.critical(msg)
-            exit(5)
+            errors_occured = True
 
         pbar.update(offset)
 
@@ -129,7 +135,12 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                                               base_address + offset,
                                               device_class)
 
-        res = utils.write_command_retry(connection, command, destinations)
+        # In case no reply is received, the instruction to write to flash should not be repeated,
+        # as this might cause problems on any system that received the first write frame.
+        # Also, it does not need to result in program exit, as the checksum process
+        # will ultimately determine, if the flash write was successful or not.
+        res = utils.write_command_retry(connection, command, destinations, retry_limit=0, error_exit=False)
+
         failed_boards = [str(id) for id, status in res.items()
                          if msgpack.unpackb(status) != 1]
 
@@ -158,12 +169,15 @@ def flash_image(connection, binary, base_address, device_class, destinations,
 
         if failed_boards:
             msg = ", ".join(failed_boards)
-            msg = "The following board" + ("s" if len(failed_boards) != 1 else "") + " failed to write flash pages: {}. Aborting.".format(msg)
+            msg = "The following board" + ("s" if len(failed_boards) != 1 else "") + " failed to write flash pages: {}".format(msg)
             logging.critical(msg)
-            exit(6)
+            errors_occured = True
 
         pbar.update(offset)
     pbar.finish()
+
+    if errors_occured:
+        logging.warn("Errors occured, the flash procedure might have failed on some destinations.")
 
     # Finally update application CRC and size in config
     print("Updating bootloader configuration page...")
