@@ -24,8 +24,11 @@ class SocketCANConnection:
                                     socket.CAN_RAW)
 
         self.socket.bind((interface, ))
+        # Set transmission and reception timeout
         self.socket.settimeout(1.)
+        # Set buffer sizes
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
 
     def send_frame(self, frame):
         data = frame.data.ljust(8, b'\x00')
