@@ -23,7 +23,7 @@ class SocketCANConnection:
                                     socket.SOCK_RAW,
                                     socket.CAN_RAW)
 
-        self.socket.bind((interface, ))
+        self.socket.bind((interface,))
         # Set transmission and reception timeout
         self.socket.settimeout(1.)
         # Set buffer sizes
@@ -74,8 +74,8 @@ class SerialCANConnection:
         t.daemon = True
         t.start()
 
-        self.send_command('S8'); # bitrate 1Mbit
-        self.send_command('O'); # open device
+        self.send_command('S8');    # bitrate 1Mbit
+        self.send_command('O');    # open device
         port.reset_input_buffer()
 
     def spin(self):
@@ -126,7 +126,7 @@ class SerialCANConnection:
         msg = msg[1:]
         if len(msg) < 2 * data_len:
             return None
-        data = [int(msg[i:i+2], 16) for i in range(0, 2 * data_len, 2)]
+        data = [int(msg[i:i + 2], 16) for i in range(0, 2 * data_len, 2)]
 
         return can.Frame(id=can_id, data=bytearray(data), data_length=data_len, extended=extended)
 
@@ -151,6 +151,6 @@ class SerialCANConnection:
 
     def receive_frame(self):
         try:
-            return self.rx_queue.get(True, 1) # block with timeout 1 sec
+            return self.rx_queue.get(True, 1)    # block with timeout 1 sec
         except:
             return None
