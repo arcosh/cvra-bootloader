@@ -46,6 +46,18 @@ static bool flash_sector_is_erased[FLASH_SECTOR_INDEX_MAX];
 
 
 /**
+ * Verify, that a given address lies within the address boundaries of flash memory
+ */
+inline bool flash_address_is_valid(uint32_t address)
+{
+    // Import flash memory boundaries from linker file
+    extern uint32_t flash_begin, flash_end;
+
+    return (address > (uint32_t)(&flash_begin) && address <= (uint32_t)(&flash_end));
+}
+
+
+/**
  * Return the flash sector number for a given address
  *
  * @param addr      Any address lying within flash memory address space
@@ -53,6 +65,9 @@ static bool flash_sector_is_erased[FLASH_SECTOR_INDEX_MAX];
  */
 static uint8_t flash_address_to_sector(uint32_t addr)
 {
+    if (!flash_address_is_valid(addr))
+        return 0;
+
     uint8_t sector;
     uint32_t offset = addr & 0xFFFFFF;
     if (offset < 0x10000) {
@@ -82,9 +97,7 @@ static uint8_t flash_address_to_sector(uint32_t addr)
 /*
 static uint32_t flash_get_sector_start(uint32_t address)
 {
-    // Check, if ddress is outside flash memory boundaries
-    extern uint32_t flash_begin, flash_end;
-    if (address < (uint32_t) (&flash_begin) || address > (uint32_t) (&flash_end))
+    if (!flash_address_is_valid(address))
         return 0;
 
     // Sector 7
@@ -124,9 +137,7 @@ static uint32_t flash_get_sector_start(uint32_t address)
  */
 static uint32_t flash_get_sector_size(uint32_t address)
 {
-    // Check, if ddress is outside flash memory boundaries
-    extern uint32_t flash_begin, flash_end;
-    if (address < (uint32_t)(&flash_begin) || address > (uint32_t)(&flash_end))
+    if (!flash_address_is_valid(address))
         return 0;
 
     // Sectors 0-3: 16K
@@ -154,6 +165,10 @@ void flash_writer_lock(void)
 
 void flash_writer_page_erase(void *page)
 {
+    if (!flash_address_is_valid((uint32_t)page))
+        // TODO: It should be returned to the function caller, that the erase has failed.
+        return;
+
     // Get sector index for this address
     uint8_t sector = flash_address_to_sector((uint32_t)page);
 
@@ -198,13 +213,25 @@ void flash_writer_page_erase(void *page)
 
 void flash_writer_page_write(void *page, void *data, size_t len)
 {
+    if (!flash_address_is_valid((uint32_t)page)
+     || !flash_address_is_valid((uint32_t)page + len))
+        // TODO: It should be returned to the function caller, that the flash write has failed.
+        return;
+
     // Mark target sectors as not-erased
     uint32_t a = (uint32_t) page;
-    while (a < ((uint32_t) page) + len)
+    while (a < ((uint32_t) page + len))
     {
         uint8_t sector = flash_address_to_sector(a);
+        if (sector >= FLASH_SECTOR_INDEX_MAX)
+            // This should never occur, except if FLASH_SECTOR_INDEX_MAX was not set properly in platform.h.
+            return;
         flash_sector_is_erased[sector] = false;
+
         a += flash_get_sector_size(a);
+        if (!flash_address_is_valid(a))
+            // This should never occur, except if there's a programming error somewhere.
+            return;
     }
 
     // Enable error interrupts
