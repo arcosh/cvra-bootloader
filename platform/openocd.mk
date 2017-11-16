@@ -4,7 +4,7 @@
 
 .PHONY: flash
 flash: all
-	openocd -f oocd.cfg -c "program $(PROJNAME).elf verify reset" -c "shutdown"
+	openocd -f oocd.cfg -c "program $(PROJNAME).elf verify reset exit"
 
 .PHONY: reset
 reset:
