@@ -64,7 +64,7 @@ CFLAGS   += -MD
 CFLAGS   += $(addprefix  -I, $(INCDIR))
 
 # C only flags
-CCFLAGS += -std=gnu11
+CCFLAGS += -std=gnu99
 #CCFLAGS  += -Wstrict-prototypes
 
 # C++ only flags
