@@ -307,7 +307,7 @@ void platform_main(int arg)
     led_blink();
 
     // Configure timeout of 10000 milliseconds (assuming 36 Mhz system clock, see above)
-    timeout_timer_init(36000000, 10000);
+    timeout_timer_init(36000000, BOOTLOADER_TIMEOUT);
     can_interface_init();
     bootloader_main(arg);
 

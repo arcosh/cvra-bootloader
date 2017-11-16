@@ -32,7 +32,13 @@ extern "C" {
 #endif
 
 /**
- * Prevent bootloader from booting the app after a timeout occured;
+ * Number of milliseconds to remain waiting for a CAN bootloader frame
+ * before booting to the application
+ */
+#define BOOTLOADER_TIMEOUT  4000
+
+/**
+ * Prevents bootloader from booting the app after a timeout occured;
  * instead wait for CAN input forever and only boot the app,
  * when being instructed to do so via the appropriate CAN command.
  */
