@@ -186,23 +186,11 @@ void can_interface_init(void)
     CAN_FMR(CAN1) &= ~((uint32_t) CAN_FMR_CAN2SB_MASK);
     CAN_FMR(CAN1) |= (uint32_t) (bank_number << CAN_FMR_CAN2SB_SHIFT);
 
-    // TODO: When using a slave CAN, the master CAN may have to be configured to accept the desired frames, too.
-    #ifdef CAN1_SET_PROMISCUOUS
-    can_filter_id_mask_32bit_init(
-        CAN1,
-        0,      // filter nr
-        0,      // id: only std id, no rtr
-        0,      // mask: match only std id[10:8] = 0 (bootloader frames)
-        0,      // assign to fifo0
-        true    // enable
-    );
-    #endif
-
     // filter to match any standard id
     // mask bits: 0 = Don't care, 1 = mute match corresponding id bit
     can_filter_id_mask_32bit_init(
-        CAN,
-        1,      // filter nr
+        CAN1,   // Must be CAN1, even when CAN2 is used, because CAN2 filters are managed by CAN1.
+        0,      // filter nr
         0,      // id: only std id, no rtr
         6 | (7<<29), // mask: match only std id[10:8] = 0 (bootloader frames)
         0,      // assign to fifo0

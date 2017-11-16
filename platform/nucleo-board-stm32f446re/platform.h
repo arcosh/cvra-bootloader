@@ -136,12 +136,6 @@ extern "C" {
 #define CAN                 CAN2
 
 /**
- * Enable reception of all CAN frames on CAN1, regardless of their ID
- * TODO: Find out, if this is required for frames incoming on CAN2 to be accepted.
- */
-#define CAN1_SET_PROMISCUOUS
-
-/**
  * CAN2_RX <- PB5
  * CAN2_TX -> PB6
  */
