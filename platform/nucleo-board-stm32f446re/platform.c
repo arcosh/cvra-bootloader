@@ -142,10 +142,10 @@ void can_interface_init(void)
     can_init(CAN,             // Interface
              false,           // Time triggered communication mode.
              true,            // Automatic bus-off management.
-             false,           // Automatic wakeup mode.
+             true,            // Automatic wakeup mode.
              false,           // No automatic retransmission.
              false,           // Receive FIFO locked mode.
-             true,            // Transmit FIFO priority.
+             false,           // Transmit FIFO priority.
              CAN_BTR_SJW_1TQ, // Resynchronization time quanta jump width
              CAN_BTR_TS1_10TQ,// Time segment 1 time quanta width
              CAN_BTR_TS2_7TQ, // Time segment 2 time quanta width
