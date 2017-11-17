@@ -12,6 +12,11 @@ Installing system wide packages via pip is *not a good idea*.
 ```sh
 # Create virtual environment
 virtualenv --python=python3 venv
+
+# In case this fails, try with the full path to your Python 3.x executable
+# virtualenv --python="C:/Program Files/Python37/python.exe" venv
+
+# Activate virtual environment
 source env/bin/activate
 
 # If you use fish, run this instead:
