@@ -1,4 +1,3 @@
-import serial
 import argparse
 from sys import exit
 
@@ -66,8 +65,7 @@ def open_connection(args):
         return can.adapters.SocketCANConnection(args.can_interface)
     elif args.serial_device:
         logging.debug("Opening serial port connection...")
-        port = serial.Serial(port=args.serial_device, timeout=0.1)
-        return can.adapters.SerialCANConnection(port)
+        return can.adapters.SerialCANConnection(args.serial_device)
 
 
 def read_can_datagrams(connection):

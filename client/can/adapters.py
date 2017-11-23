@@ -67,7 +67,7 @@ class SerialCANConnection:
     MIN_MSG_LEN = len('t1230')
 
     def __init__(self, port):
-        self.port = port
+        self.port = serial.Serial(port=port, timeout=0.1)
 
         self.rx_queue = Queue()
         t = threading.Thread(target=self.spin)
