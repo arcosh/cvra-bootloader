@@ -1,9 +1,13 @@
+
 import struct
 from zlib import crc32
+
+import can
 from .frame import *
 
 DATAGRAM_VERSION = 1
 START_OF_DATAGRAM_MASK = (1 << 7)
+
 
 class VersionMismatchError(RuntimeError):
     """
@@ -45,6 +49,8 @@ def decode_datagram(data):
     Raise an exception if the datagram is invalid (wrong version or wrong CRC).
     """
 
+    version = -1
+
     try:
         version, data = int(data[0]), data[1:]
         if version != DATAGRAM_VERSION:
@@ -77,10 +83,10 @@ def decode_datagram(data):
         # This means that we have not enough bytes to decode a datagram
         return None
     except VersionMismatchError:
-        can.adapters.logging.debug("Rejected datagram with unexpected version ", version, " instead of ", DATAGRAM_VERSION, ".")
+        can.logging.debug("Rejected datagram with incompatible version " + str(version) + " instead of " + str(DATAGRAM_VERSION) + ".")
         return None
     except CRCMismatchError:
-        can.adapters.logging.debug("Rejected datagram with incorrect CRC.")
+        can.logging.debug("Rejected datagram with incorrect CRC.")
         return None
 
     return data, destinations
