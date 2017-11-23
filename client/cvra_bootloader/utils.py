@@ -1,12 +1,14 @@
+
 import argparse
+import logging
 from sys import exit
+from collections import defaultdict
 
 from cvra_bootloader import commands
-import can
-import logging
-import can.adapters
 
-from collections import defaultdict
+import can
+from can.adapters.slcan import SLCANInterface
+from can.adapters.socketcan import SocketCANInterface
 
 
 class ConnectionArgumentParser(argparse.ArgumentParser):
@@ -57,15 +59,15 @@ def open_connection(args):
     Returns a file like object which will be the connection handle.
     """
 
-    # Propagate loglevel to adapters.py
-    can.adapters.logging.getLogger().setLevel(logging.getLogger().level)
+    # Propagate loglevel to CAN logging
+    can.logging.getLogger().setLevel(logging.getLogger().level)
 
     if args.can_interface:
         logging.debug("Opening SocketCAN connection...")
-        return can.adapters.SocketCANConnection(args.can_interface)
+        return SocketCANInterface(args.can_interface)
     elif args.serial_device:
-        logging.debug("Opening serial port connection...")
-        return can.adapters.SerialCANConnection(args.serial_device)
+        logging.debug("Opening SLCAN connection...")
+        return SLCANInterface(args.serial_device)
 
 
 def read_can_datagrams(connection):
