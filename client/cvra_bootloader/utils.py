@@ -1,5 +1,4 @@
 import serial
-import socket
 import argparse
 from sys import exit
 
@@ -50,27 +49,6 @@ class ConnectionArgumentParser(argparse.ArgumentParser):
             logging.getLogger().setLevel(logging.DEBUG)
 
         return args
-
-
-class SocketSerialAdapter:
-    """
-    This class wraps a socket in an API compatible with PySerial's one.
-    """
-    def __init__(self, socket):
-        self.socket = socket
-
-    def read(self, n):
-        try:
-            return self.socket.recv(n)
-        except socket.timeout:
-            return bytes()
-
-
-    def write(self, data):
-        return self.socket.send(data)
-
-    def flush(self):
-        pass
 
 
 def open_connection(args):
