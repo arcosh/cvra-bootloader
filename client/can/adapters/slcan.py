@@ -31,7 +31,11 @@ class SLCANInterface:
     def spin(self):
         part = ''
         while True:
-            part += self.port.read(100).decode('ascii')
+            try:
+                part += self.port.read(1).decode('ascii')
+            except serial.serialutil.SerialException:
+                # Continue reading anyway until program terminates
+                pass
 
             if part.startswith('\r'):
                 part.lstrip('\r')
