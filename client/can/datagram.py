@@ -70,7 +70,7 @@ def decode_datagram(data):
         data_len = struct.unpack('>I', data_len)[0]
 
         # If we did not receive all data yet
-        if data_len != len(data):
+        if len(data) < data_len:
             return None
 
         addresses = bytes([len(destinations)] + destinations)

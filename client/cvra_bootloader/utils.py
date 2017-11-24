@@ -97,7 +97,7 @@ def read_can_datagrams(connection):
                 del buf[src]
 
             # Append frame bytes to the buffer of the corresponding ID
-            buf[src] += frame.data
+            buf[src] += frame.data[:frame.data_length]
 
             # Attempt to decode buffer as datagram
             datagram = can.decode_datagram(buf[src])
