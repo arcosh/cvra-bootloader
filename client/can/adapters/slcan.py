@@ -52,6 +52,7 @@ class SLCANInterface:
                 frame = self.decode_frame(frame)
                 if frame:
                     self.rx_queue.put(frame)
+                    can.logging.debug("Received CAN frame from SLCAN adapter.")
 
     def send_command(self, cmd):
         cmd += '\r'
@@ -100,6 +101,7 @@ class SLCANInterface:
         return cmd + can_id + length + data
 
     def send_frame(self, frame):
+        can.logging.debug("Transmitting CAN frame via SLCAN adapter...")
         cmd = self.encode_frame(frame)
         self.send_command(cmd)
 
