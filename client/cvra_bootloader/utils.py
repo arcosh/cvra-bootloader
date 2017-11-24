@@ -1,4 +1,5 @@
 
+from time import sleep
 import argparse
 import logging
 from sys import exit
@@ -9,6 +10,7 @@ from cvra_bootloader import commands
 import can
 from can.adapters.slcan import SLCANInterface
 from can.adapters.socketcan import SocketCANInterface
+from can.adapters.peak_pcan import PeakPCANInterface
 
 
 class ConnectionArgumentParser(argparse.ArgumentParser):
@@ -63,10 +65,14 @@ def open_connection(args):
     can.logging.getLogger().setLevel(logging.getLogger().level)
 
     if args.can_interface:
-        logging.debug("Opening SocketCAN connection...")
-        return SocketCANInterface(args.can_interface)
+        if args.can_interface[:4] == "pcan":
+            logging.debug("Selected Peak PCAN interface.")
+            return PeakPCANInterface()
+        else:
+            logging.debug("Selected SocketCAN interface.")
+            return SocketCANInterface(args.can_interface)
     elif args.serial_device:
-        logging.debug("Opening SLCAN connection...")
+        logging.debug("Selected SLCAN interface.")
         return SLCANInterface(args.serial_device)
 
 
@@ -182,6 +188,7 @@ def write_command_retry(connection, command, destinations, source=0, retry_limit
             logging.debug("Retrying transmission (attempt " + str(retry_count + 2) + "/" + str(1 + retry_limit) + ")...")
             write_command(connection, command, timedout_boards, source)
             retry_count += 1
+            sleep(0.5)
             continue
 
         data, _, src = dt
