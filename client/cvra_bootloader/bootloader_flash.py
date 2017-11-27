@@ -198,7 +198,7 @@ def verify_flash_write(connection, binary, base_address, destinations):
     # Calculate checksum on local binary
     logging.debug("Generating checksum of input file...")
     expected_crc = crc32(binary)
-    logging.debug("Expected checksum: " + format(expected_crc, '#06x'))
+    print("Expecting checksum: " + format(expected_crc, '#08x'))
 
     # Instruct the target nodes to calculate a checksum on their flash content
     logging.debug("Encoding request to calculate checksum for address range " + format(base_address, "#010x") + "-" + format(base_address + len(binary), "#010x"))
@@ -220,7 +220,7 @@ def verify_flash_write(connection, binary, base_address, destinations):
         answer, _, src = dt
 
         crc = msgpack.unpackb(answer)
-        logging.debug("Node " + str(src) + " reports checksum: " + format(crc, '#06x'))
+        print("Node " + str(src) + " reports checksum: " + format(crc, '#08x'))
 
         if crc == expected_crc:
             valid_nodes.append(src)
