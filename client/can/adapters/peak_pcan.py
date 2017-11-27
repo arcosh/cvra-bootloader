@@ -2,6 +2,7 @@
 import can
 from .PCAN_Basic.Include.PCANBasic import *
 
+from time import sleep
 
 class PeakPCANInterface:
     """
@@ -34,6 +35,13 @@ class PeakPCANInterface:
 
     def receive_frame(self):
         result = self.pcan.Read(self.channel)
+
+        timeout = 10
+        while (result[0] != PCAN_ERROR_OK and timeout > 0):
+            sleep(0.1)
+            timeout -= 1
+            result = self.pcan.Read(self.channel)
+
         if result[0] != PCAN_ERROR_OK:
             return None
 
