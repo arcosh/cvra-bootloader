@@ -9,22 +9,32 @@ Here we install dependencies in a virtual environment to avoid cluttering system
 An alternative way is to use your system package manager to install dependencies.
 Installing system wide packages via pip is *not a good idea*.
 
-```sh
-# Create virtual environment
+## Linux
+````sh
+# Creating the virtual environment
 virtualenv --python=python3 venv
 
-# In case this fails, try with the full path to your Python 3.x executable
-# virtualenv --python="C:/Program Files/Python37/python.exe" venv
+# Activating the virtual environment
+source venv/bin/activate
 
-# Activate virtual environment
-source env/bin/activate
+# Activating the virtual environment, if you use fish
+source venv/bin/activate.fish
 
-# If you use fish, run this instead:
-# source env/bin/activate.fish
-
-# Install required packages
+# Finally, install everything into your virtual environment
 python setup.py install
-```
+````
+
+## Windows
+````sh
+# Creating the virtual environment with the full path to Python 3.x executable
+virtualenv --python="C:/Program Files/Python37/python.exe" venv
+
+# Activating the virtual environment
+source venv/Scripts/activate
+
+# Finally, install everything into your virtual environment
+python setup.py install
+````
 
 ## Development mode
 If you are working on the bootloader client code you might want to use `python setup.py develop`.
