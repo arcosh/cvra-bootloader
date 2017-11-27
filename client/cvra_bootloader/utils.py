@@ -188,7 +188,6 @@ def write_command_retry(connection, command, destinations, source=0, retry_limit
             logging.debug("Retrying transmission (attempt " + str(retry_count + 2) + "/" + str(1 + retry_limit) + ")...")
             write_command(connection, command, timedout_boards, source)
             retry_count += 1
-            sleep(0.5)
             continue
 
         data, _, src = dt
