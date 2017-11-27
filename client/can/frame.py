@@ -5,21 +5,24 @@ class Frame:
 
     def __init__(self, id=0, data=None, extended=False,
                  transmission_request=False,
-                 data_length=0):
+                 data_length=None):
 
+        # If no data is provided, start with empty frame.
         if data is None:
             data = bytes()
 
+        # Restrict length to 8 bytes
         if len(data) > 8:
-            raise ValueError
+            data = data[:8]
 
         self.id = id
-
         self.data = data
-        self.data_length = data_length
 
-        if len(self.data) > 0:
+        # Extract data_length, (only) if not provided
+        if data_length is None:
             self.data_length = len(self.data)
+        else:
+            self.data_length = data_length
 
         self.transmission_request = transmission_request
         self.extended = extended

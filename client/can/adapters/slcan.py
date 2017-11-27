@@ -1,87 +1,41 @@
+
 import can
-import socket
-import struct
 import serial
 from queue import Queue
 import threading
-import errno
-import logging
-from sys import exit
-
-class SocketCANConnection:
-    # See <linux/can.h> for format
-    CAN_FRAME_FMT = "=IB3x8s"
-    CAN_FRAME_SIZE = struct.calcsize(CAN_FRAME_FMT)
 
 
-    def __init__(self, interface):
-        """
-        Initiates a CAN connection on the given interface (e.g. 'can0').
-        """
-        # Creates a raw CAN connection and binds it to the given interface.
-        self.socket = socket.socket(socket.AF_CAN,
-                                    socket.SOCK_RAW,
-                                    socket.CAN_RAW)
-
-        self.socket.bind((interface,))
-        # Set transmission and reception timeout
-        self.socket.settimeout(1.)
-        # Set buffer sizes
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
-
-    def send_frame(self, frame):
-        data = frame.data.ljust(8, b'\x00')
-        data = struct.pack(self.CAN_FRAME_FMT,
-                           frame.id,
-                           len(frame.data),
-                           data)
-
-        try:
-            self.socket.send(data)
-        except socket.timeout:
-            logging.debug("Socket transmission timed out")
-            pass
-        except OSError as e:
-            if e.errno == errno.ENOBUFS:
-                logging.critical("Transmission buffer overflow. Probably CAN frames are not being acknowledged properly on the bus. Please connect the CAN adapter to a network.")
-                exit(errno.ENOBUFS)
-            else:
-                raise e
-
-    def receive_frame(self):
-        try:
-            frame, _ = self.socket.recvfrom(self.CAN_FRAME_SIZE)
-        except socket.timeout:
-            logging.debug("Socket reception timed out")
-            return None
-        can_id, can_dlc, data = struct.unpack(self.CAN_FRAME_FMT, frame)
-        logging.debug("Received")
-        return can.Frame(id=can_id, data=data[:can_dlc])
-
-class SerialCANConnection:
+class SLCANInterface:
     """
-    Implements the slcan API.
+    Implements support for CAN adapters which support the SLCAN API
     """
 
     MIN_MSG_LEN = len('t1230')
 
     def __init__(self, port):
-        self.port = port
+        self.port = serial.Serial(port=port, timeout=0.1)
 
+        # Queue for received CAN frames
         self.rx_queue = Queue()
+
+        # Start independent thread for frame reception
         t = threading.Thread(target=self.spin)
         t.daemon = True
         t.start()
 
+        # Configure adapter
         self.send_command('S8');    # bitrate 1Mbit
         self.send_command('O');    # open device
-        port.reset_input_buffer()
+        self.port.reset_input_buffer()
 
     def spin(self):
         part = ''
         while True:
-            part += self.port.read(100).decode('ascii')
+            try:
+                part += self.port.read(1).decode('ascii')
+            except serial.serialutil.SerialException:
+                # Continue reading anyway until program terminates
+                pass
 
             if part.startswith('\r'):
                 part.lstrip('\r')
@@ -98,6 +52,7 @@ class SerialCANConnection:
                 frame = self.decode_frame(frame)
                 if frame:
                     self.rx_queue.put(frame)
+                    can.logging.debug("Received CAN frame from SLCAN adapter.")
 
     def send_command(self, cmd):
         cmd += '\r'
@@ -146,6 +101,7 @@ class SerialCANConnection:
         return cmd + can_id + length + data
 
     def send_frame(self, frame):
+        can.logging.debug("Transmitting CAN frame via SLCAN adapter...")
         cmd = self.encode_frame(frame)
         self.send_command(cmd)
 

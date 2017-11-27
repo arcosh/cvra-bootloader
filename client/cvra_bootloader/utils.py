@@ -1,14 +1,16 @@
-import serial
-import socket
+
+from time import sleep
 import argparse
+import logging
 from sys import exit
+from collections import defaultdict
 
 from cvra_bootloader import commands
-import can
-import logging
-import can.adapters
 
-from collections import defaultdict
+import can
+from can.adapters.slcan import SLCANInterface
+from can.adapters.socketcan import SocketCANInterface
+from can.adapters.peak_pcan import PeakPCANInterface
 
 
 class ConnectionArgumentParser(argparse.ArgumentParser):
@@ -52,27 +54,6 @@ class ConnectionArgumentParser(argparse.ArgumentParser):
         return args
 
 
-class SocketSerialAdapter:
-    """
-    This class wraps a socket in an API compatible with PySerial's one.
-    """
-    def __init__(self, socket):
-        self.socket = socket
-
-    def read(self, n):
-        try:
-            return self.socket.recv(n)
-        except socket.timeout:
-            return bytes()
-
-
-    def write(self, data):
-        return self.socket.send(data)
-
-    def flush(self):
-        pass
-
-
 def open_connection(args):
     """
     Open a connection based on commandline arguments.
@@ -80,16 +61,19 @@ def open_connection(args):
     Returns a file like object which will be the connection handle.
     """
 
-    # Propagate loglevel to adapters.py
-    can.adapters.logging.getLogger().setLevel(logging.getLogger().level)
+    # Propagate loglevel to CAN logging
+    can.logging.getLogger().setLevel(logging.getLogger().level)
 
     if args.can_interface:
-        logging.debug("Opening SocketCAN connection...")
-        return can.adapters.SocketCANConnection(args.can_interface)
+        if args.can_interface[:4] == "pcan":
+            logging.debug("Selected Peak PCAN interface.")
+            return PeakPCANInterface()
+        else:
+            logging.debug("Selected SocketCAN interface.")
+            return SocketCANInterface(args.can_interface)
     elif args.serial_device:
-        logging.debug("Opening serial port connection...")
-        port = serial.Serial(port=args.serial_device, timeout=0.1)
-        return can.adapters.SerialCANConnection(port)
+        logging.debug("Selected SLCAN interface.")
+        return SLCANInterface(args.serial_device)
 
 
 def read_can_datagrams(connection):
@@ -119,7 +103,7 @@ def read_can_datagrams(connection):
                 del buf[src]
 
             # Append frame bytes to the buffer of the corresponding ID
-            buf[src] += frame.data
+            buf[src] += frame.data[:frame.data_length]
 
             # Attempt to decode buffer as datagram
             datagram = can.decode_datagram(buf[src])
