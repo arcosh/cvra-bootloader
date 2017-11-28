@@ -1,3 +1,6 @@
+# Manually cloned progressbar for packing a standalone Windows executable
+progressbar
+
 # Bootloader configuration files
 *.json
 
