@@ -91,15 +91,29 @@ def flash_image(connection, binary, base_address, device_class, destinations,
         failed_boards = [str(id) for id, status in res.items()
                          if msgpack.unpackb(status) != 1]
 
+        # Debug the received CAN replies
         if args.verbose:
             node_count = len(res.items())
             logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
             for id, status in res.items():
                 code = msgpack.unpackb(status)
-                msg = "Board " + str(id) + " replied with status code: " + str(code)
+                if code != 1:
+                    continue
+                msg = "Board " + str(id) + " reports success"
+                logging.debug(msg)
+
+        if failed_boards:
+            if not args.verbose:
+                # Otherwise log message ends up in progressbar
+                print("")
+
+            # Print error code for all failed boards
+            for id, status in res.items():
+                code = msgpack.unpackb(status)
                 if code == 1:
-                    error = "success"
-                elif code == 0:
+                    continue
+                msg = "Board " + str(id) + " reports error " + str(code)
+                if code == 0:
                     error = "unspecified error"
                 elif code == 10:
                     error = "illegal attempt to erase before app section"
@@ -110,12 +124,9 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                 else:
                     error = "unrecognized status code"
                 msg = msg + " (" + error + ")"
-                logging.debug(msg)
+                logging.error(msg)
 
-        if failed_boards:
-            if not args.verbose:
-                # Otherwise log message ends up in progressbar
-                print("")
+            # Print list of failed board IDs
             msg = ", ".join(failed_boards)
             msg = "The following board" + ("s" if len(failed_boards) != 1 else "") + " failed to erase flash pages: {}".format(msg)
             logging.critical(msg)
@@ -144,15 +155,25 @@ def flash_image(connection, binary, base_address, device_class, destinations,
         failed_boards = [str(id) for id, status in res.items()
                          if msgpack.unpackb(status) != 1]
 
+        # Debug the received CAN replies
         if args.verbose:
             node_count = len(res.items())
             logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
             for id, status in res.items():
                 code = msgpack.unpackb(status)
-                msg = "Board " + str(id) + " replied with status code: " + str(code)
+                if code != 1:
+                    continue
+                msg = "Board " + str(id) + " reports success"
+                logging.debug(msg)
+
+        if failed_boards:
+            # Print all received error codes
+            for id, status in res.items():
+                code = msgpack.unpackb(status)
                 if code == 1:
-                    error = "success"
-                elif code == 0:
+                    continue
+                msg = "Board " + str(id) + " reports error " + str(code)
+                if code == 0:
                     error = "unspecified error"
                 elif code == 20:
                     error = "illegal attempt to write before app section"
@@ -165,9 +186,9 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                 else:
                     error = "unrecognized status code"
                 msg = msg + " (" + error + ")"
-                logging.debug(msg)
+                logging.error(msg)
 
-        if failed_boards:
+            # Print list of failed boards
             msg = ", ".join(failed_boards)
             msg = "The following board" + ("s" if len(failed_boards) != 1 else "") + " failed to write flash pages: {}".format(msg)
             logging.critical(msg)
