@@ -1,9 +1,11 @@
 #!bash
 
 #
-# This script generates standalone bootloader executables for Windows
+# This script uses PyInstaller
+# to generate standalone Windows executables
+# for the bootloader client Python scripts.
 #
-# Requirements: git, bash, Python 3.5
+# Requirements: git-bash, Python 3.5, PyInstaller
 #
 
 # Clone Python 3.x-compatible progressbar
@@ -25,6 +27,10 @@ for script in bootloader_flash read_config write_config change_id run_applicatio
 	rm build/$script -fr
 done
 
-# Remove build folder
+for exe in read_config write_config change_id run_application; do
+	mv -v dist/$exe.exe dist/bootloader_$exe.exe
+done
+
+# Remove (empty) build folder
 rmdir build
 
