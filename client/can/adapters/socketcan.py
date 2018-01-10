@@ -2,10 +2,10 @@
 import can
 import socket
 import struct
-import errno
-from sys import exit
 from queue import Queue
 import threading
+import errno
+from sys import exit
 
 
 class SocketCANInterface:
@@ -26,7 +26,27 @@ class SocketCANInterface:
                                     socket.SOCK_RAW,
                                     socket.CAN_RAW)
 
-        self.socket.bind((interface,))
+        try:
+            self.socket.bind((interface,))
+        except OSError as e:
+            if (e.errno == errno.ENOENT) or (e.errno == errno.ENXIO) or (e.errno == errno.ENODEV):
+                # No such device
+                can.logging.critical("The specified interface could not be found.")
+                exit(1)
+            elif e.errno == errno.ENETDOWN:
+                # Network is down
+                can.logging.critical("The CAN network is down.")
+                exit(errno.ENETDOWN)
+            else:
+                # all other OSError exceptions
+                can.logging.critical("Unable to bind to the specified interface.")
+                raise
+                exit(1)
+        except Exception as e:
+            # all other exceptions
+            can.logging.critical("Unable to bind to the specified interface.")
+            raise
+            exit(1)
 
         # Set transmission and reception timeout
         self.socket.settimeout(2.)
@@ -72,10 +92,19 @@ class SocketCANInterface:
             pass
         except OSError as e:
             if e.errno == errno.ENOBUFS:
-                can.logging.critical("Transmission buffer overflow. Probably CAN frames are not being acknowledged properly on the bus. Please connect the CAN adapter to a network.")
+                # Buffer overflow
+                can.logging.critical("Transmission buffer overflow. Probably CAN frames are not being acknowledged properly on the bus.")
                 exit(errno.ENOBUFS)
+            elif e.errno == errno.ENETDOWN:
+                # Network is down
+                can.logging.critical("The CAN network is down.")
+                exit(errno.ENETDOWN)
             else:
-                raise e
+                raise
+                exit(1)
+        except:
+            raise
+            exit(1)
 
 
     def receive_frame(self):

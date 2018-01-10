@@ -1,8 +1,12 @@
 
 import can
+import termios
 import serial
+from serial.serialutil import SerialException
 from queue import Queue
 import threading
+import errno
+from sys import exit
 
 
 class SLCANInterface:
@@ -13,7 +17,41 @@ class SLCANInterface:
     MIN_MSG_LEN = len('t1230')
 
     def __init__(self, port):
-        self.port = serial.Serial(port=port, timeout=0.1)
+        try:
+            self.port = serial.Serial(port=port, timeout=1)
+        except FileNotFoundError:
+            # Port not found exception
+            can.logging.critical("The specified port could not be found.")
+            exit(1)
+        except SerialException as e:
+            if e.errno == errno.EACCES:
+                # Permission denied
+                can.logging.critical("You don't seem to have permission to open this port.")
+                exit(e.errno)
+            elif e.errno == errno.EBUSY:
+                # Device or resource busy
+                can.logging.critical("The specified port appears to be busy. Is it in use by another program?")
+                exit(e.errno)
+            else:
+                # all other serial exceptions
+                can.logging.critical("The specified port could not be opened.")
+                raise
+                exit(e.errno)
+        except termios.error as e:
+            if e.args[0] == 25:
+                # Inappropriate ioctl for device
+                can.logging.critical("The specified port appears to be busy. Is it in use by another program?")
+                exit(e.args[0])
+            else:
+                # all other termios errors
+                can.logging.critical("The specified port could not be opened.")
+                raise
+                exit(e.args[0])
+        except:
+            # all other exceptions
+            can.logging.critical("The specified port could not be opened.")
+            raise
+            exit(1)
 
         # Queue for received CAN frames
         self.rx_queue = Queue()
