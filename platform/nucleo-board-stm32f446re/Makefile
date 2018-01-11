@@ -35,7 +35,11 @@ include include.mk
 CSRC     += $(addprefix $(PLATFORM_PATH), $(PLATFORM_CSRC))
 
 # Includes
-INCDIR   = ./ $(PROJ_ROOT)/libopencm3/include $(PROJ_ROOT)/
+INCDIR   := ./
+INCDIR   += $(PROJ_ROOT)/
+INCDIR   += $(PROJ_ROOT)/platform/mcu/armv7-m
+INCDIR   += $(PROJ_ROOT)/platform/mcu/stm32f4
+INCDIR   += $(PROJ_ROOT)/libopencm3/include
 INCDIR   += $(addprefix $(PROJ_ROOT)/, $(PACKAGER_INCDIR))
 
 LDSCRIPT = ./linkerscript.ld

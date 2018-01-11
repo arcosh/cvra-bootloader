@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <platform.h>
+#include <led.h>
+
 #include "command.h"
 #include "can_datagram.h"
 #include "config.h"
@@ -126,6 +127,10 @@ void bootloader_main(int arg)
      * Size of the response datagram in bytes
      */
     uint8_t reply_length;
+    /**
+     * Flag to indicate, whether the previously received datagram was received completely and intact
+     */
+    bool previous_datagram_was_valid = true;
 
     can_datagram_init(&dt);
     can_datagram_set_address_buffer(&dt, addr_buf);
@@ -161,17 +166,29 @@ void bootloader_main(int arg)
 
         // Begin constructing a new, empty reception datagram
         if ((id & ID_START_MASK) != 0) {
+            if (previous_datagram_was_valid)
+            {
+                led_blink(LED_SUCCESS);
+            }
+            else
+            {
+                led_blink(LED_ERROR);
+            }
+
             can_datagram_start(&dt);
+            previous_datagram_was_valid = false;
         }
 
         // Append frame bytes to current reception datagram
-        int i;
-        for (i = 0; i < data_length; i++) {
+        for (uint8_t i = 0; i < data_length; i++) {
             can_datagram_input_byte(&dt, data[i]);
         }
 
         if (can_datagram_is_complete(&dt)) {
             if (can_datagram_is_valid(&dt)) {
+
+                // Don't flash the red LED upon beginning of next datagram
+                previous_datagram_was_valid = true;
 
                 // Check, if this nodes's ID is amongst the datagram's target IDs
                 bool addressed = false;
@@ -186,6 +203,8 @@ void bootloader_main(int arg)
                 }
 
                 if (addressed) {
+                    led_blink(LED_SUCCESS);
+
                     // we were addressed
                     reply_length = execute_datagram_commands(
                             (char*) dt.data,

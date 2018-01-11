@@ -10,49 +10,10 @@
 
 #include <bootloader.h>
 #include <boot_arg.h>
+#include <led.h>
 #include <platform/mcu/armv7-m/timeout_timer.h>
 #include "platform.h"
 
-
-void led_init()
-{
-    #if (GPIO_PORT_LED2 == GPIOA)
-    rcc_periph_clock_enable(RCC_GPIOA);
-    #endif
-    #if (GPIO_PORT_LED2 == GPIOB)
-    rcc_periph_clock_enable(RCC_GPIOB);
-    #endif
-
-    gpio_mode_setup(
-            GPIO_PORT_LED2,
-            GPIO_MODE_OUTPUT,
-            GPIO_PUPD_NONE,
-            GPIO_PIN_LED2
-            );
-    gpio_set_output_options(
-            GPIO_PORT_LED2,
-            GPIO_OTYPE_PP,
-            GPIO_OSPEED_2MHZ,
-            GPIO_PIN_LED2
-            );
-    gpio_set(
-            GPIO_PORT_LED2,
-            GPIO_PIN_LED2
-            );
-}
-
-void led_blink()
-{
-    // Blink onboard led
-    for (uint32_t i=0;i<3;i++)
-    {
-        for (uint32_t j=0;j<150000;j++)
-        {
-            asm("nop");
-        }
-        gpio_toggle(GPIO_PORT_LED2, GPIO_PIN_LED2);
-    }
-}
 
 void can_interface_init(void)
 {
@@ -283,16 +244,17 @@ void rcc_clock_setup_in_hsi_out_36mhz(void)
     rcc_set_ppre2(4);
 }
 
+
 void platform_main(int arg)
 {
     // Run from internal RC oscillator
     rcc_clock_setup_in_hsi_out_36mhz();
 
-    // Initialize the on-board LED
+    // Initialize the on-board LED(s)
     led_init();
 
     // Blink on-board LED to indicate platform startup
-    led_blink();
+    led_blink(LED_SUCCESS);
 
     // Configure timeout of 10000 milliseconds (assuming 36 Mhz system clock, see above)
     timeout_timer_init(36000000, BOOTLOADER_TIMEOUT);
