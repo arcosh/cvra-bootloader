@@ -1,0 +1,100 @@
+/**
+ * This file contains customizable switches and parameters
+ * for the STM32F446RE platform
+ */
+
+#ifndef PLATFORM_CONFIG_H
+#define PLATFORM_CONFIG_H
+
+/**
+ * Generate the default board name from the MCU's serial number
+ *
+ * This feature is currently not enabled, because the resulting
+ * bootloader image does not fit into flash anymore.
+ */
+//#define PLATFORM_ENABLE_UUID
+
+/**
+ * Number of microseconds to remain in the bootloader
+ * waiting for a CAN frame before booting to the payload application
+ */
+#define BOOTLOADER_TIMEOUT      4000
+
+/**
+ * Prevents bootloader from booting the app after a timeout occured;
+ * instead wait for CAN input forever and only boot the app,
+ * when being instructed to do so via the appropriate CAN command.
+ */
+//#define BOOTLOADER_TIMEOUT_DISABLE
+
+/**
+ * The incoming datagram buffer must support largest flash sector size + datagram overhead.
+ */
+#define INPUT_BUFFER_SIZE       32768
+
+/**
+ * The outgoing datagram buffer must support config page size + datagram overhead.
+ */
+#define OUTPUT_BUFFER_SIZE      8192
+
+/**
+ * Number of microseconds to wait for a datagram to complete
+ * before sending an error reply
+ */
+#define DATAGRAM_TIMEOUT        1000
+
+/**
+ * Boots the application image (upon bootloader timeout or CAN command)
+ * regardless of whether the app image checksum equals the configured checksum
+ */
+//#define COMMAND_JUMP_DISABLE_CRC_CHECKING
+
+/**
+ * Conserve energy by putting the processor to sleep
+ * while waiting for interrupts (CAN or timer)
+ */
+//#define BOOTLOADER_SLEEP_UNTIL_INTERRUPT
+
+
+/**
+ * Configure onboard LEDs
+ */
+#define LED1                // Use LED1 with default pin configuration
+//#define LED2                // Enable and configure a second LED
+//#define GPIO_PORT_LED2  GPIOC
+//#define GPIO_PIN_LED2   GPIO5
+
+
+/**
+ * Configure which CAN peripheral to use
+ */
+#define USE_CAN2
+//#define CAN_USE_PINS_PB5_PB6
+//#define CAN_USE_PINS_PB12_PB13
+#define CAN_USE_PINS_ST_BOOTLOADER
+
+/**
+ * Use interrupts to receive CAN frames
+ */
+#define CAN_USE_INTERRUPTS
+
+/**
+ * Many CAN transceivers have an enable input,
+ * which needs to be driven HIGH or LOW in order
+ * for the transceiver to become operational.
+ * Define USE_CAN_ENABLE to set the pin
+ * defined below to HIGH upon startup.
+ */
+//#define USE_CAN_ENABLE
+//#define GPIO_PORT_CAN_ENABLE    GPIOA
+//#define GPIO_PIN_CAN_ENABLE     GPIO8
+
+/**
+ * Additionally to USE_CAN_ENABLE
+ * CAN_ENABLE_INVERTED can be defined
+ * to drive the CAN enable signal as active low.
+ */
+//#define CAN_ENABLE_INVERTED
+
+#endif
+

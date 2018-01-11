@@ -1,3 +1,6 @@
+
+#include <bootloader.h>
+
 #include <stdint.h>
 #include <string.h>
 
@@ -9,44 +12,8 @@
 #include "timeout.h"
 #include "can_interface.h"
 
-// TODO: How big can one incoming datagram become?
-#define INPUT_BUFFER_SIZE       8192
+#include <cmp_mem_access/cmp_mem_access.h>
 
-// TODO: How big can one outgoing datagram become?
-#define OUTPUT_BUFFER_SIZE      8192
-
-/**
- * The default ID the bootloader assumes,
- * when no config page is available
- *
- * This value can be overwritten in platform.h.
- */
-#ifndef DEFAULT_ID
-#define DEFAULT_ID  1
-#endif
-
-#ifndef PLATFORM_DEFAULT_NAME
-/**
- * The default name the bootloader begins a new configuration
- * with in case no usable configuration is found
- *
- * This macro can be overwritten in platform.h.
- */
-#define PLATFORM_DEFAULT_NAME   "undefined"
-#endif
-
-/**
- * Maximum number of transmission retries
- * upon CAN transmission failure
- */
-#define CAN_SEND_RETRIES    100
-
-/**
- * Maximum number of times, the CAN RX FIFO
- * is polled (in immediate successsion)
- * for new, incoming messages
- */
-#define CAN_RECEIVE_TIMEOUT 1000
 
 /**
  * List of commands supported by this firmware
@@ -121,7 +88,7 @@ void bootloader_main(int arg)
         // exact behaviour at invalid config is not yet defined.
         strcpy(config.device_class, PLATFORM_DEVICE_CLASS);
         strcpy(config.board_name, PLATFORM_DEFAULT_NAME);
-        config.ID = DEFAULT_ID;
+        config.ID = PLATFORM_DEFAULT_ID;
         config.application_crc = 0xDEADC0DE;
         config.application_size = 0;
         config.update_count = 1;

@@ -12,16 +12,12 @@ extern "C" {
 
 #include <stdint.h>
 #include <stddef.h>
+#include "platform_config.h"
 
+
+#ifndef PLATFORM_DEVICE_CLASS
 #define PLATFORM_DEVICE_CLASS       "nucleo-board-stm32f446re"
-
-/*
- * Generate the default board name from the STM32's serial number
- *
- * This feature is currently not enabled, because the resulting
- * bootloader image does not fit into flash anymore with it.
- */
-//#define PLATFORM_ENABLE_UUID
+#endif
 
 #ifdef PLATFORM_ENABLE_UUID
 #include <libopencm3/cm3/common.h>  // MMIO
@@ -31,18 +27,6 @@ extern "C" {
 #define PLATFORM_DEFAULT_NAME       platform_get_default_name()
 #endif
 
-/**
- * Number of milliseconds to remain waiting for a CAN bootloader frame
- * before booting to the application
- */
-#define BOOTLOADER_TIMEOUT  4000
-
-/**
- * Prevents bootloader from booting the app after a timeout occured;
- * instead wait for CAN input forever and only boot the app,
- * when being instructed to do so via the appropriate CAN command.
- */
-#define BOOTLOADER_TIMEOUT_DISABLE
 
 /**
  * The STM32F446RE has eight flash sectors,
@@ -58,26 +42,47 @@ extern "C" {
  */
 #define CONFIG_PAGE_SIZE            512
 
-// Onboard LED
-#define GPIO_PORT_LED2  GPIOA
-#define GPIO_PIN_LED2   GPIO5
+
+/**
+ * Configure onboard LEDs
+ */
+#ifndef LED_SUCCESS
+#define LED_SUCCESS     1
+#endif
+#ifndef LED_ERROR
+#define LED_ERROR       2
+#endif
+
+#if defined(LED1) && (!defined(GPIO_PIN_LED1))
+#define GPIO_PORT_LED1  GPIOA
+#define GPIO_PIN_LED1   GPIO5
+#endif
+
 
 /**
  * Configure which CAN peripheral to use
  */
+#if (!defined(USE_CAN1)) && (!defined(USE_CAN2))
 //#define USE_CAN1
 #define USE_CAN2
+#endif
 
 /**
  * Configure which GPIO pins to use as CAN RX and TX
  */
-#ifdef USE_CAN1
+#if     defined(USE_CAN1) \
+    && (!defined(CAN_USE_PINS_PB8_PB9)) \
+    && (!defined(CAN_USE_PINS_PA11_PA12)) \
+    && (!defined(CAN_USE_PINS_PD0_PD1))
 #define CAN_USE_PINS_PB8_PB9
 //#define CAN_USE_PINS_PA11_PA12
 //#define CAN_USE_PINS_PD0_PD1
 #endif
 
-#ifdef USE_CAN2
+#if     defined(USE_CAN2) \
+    && (!defined(CAN_USE_PINS_PB5_PB6)) \
+    && (!defined(CAN_USE_PINS_PB12_PB13)) \
+    && (!defined(CAN_USE_PINS_ST_BOOTLOADER))
 //#define CAN_USE_PINS_PB5_PB6
 #define CAN_USE_PINS_PB12_PB13
 //#define CAN_USE_PINS_ST_BOOTLOADER
@@ -173,24 +178,20 @@ extern "C" {
 #endif // USE_CAN2
 
 /**
- * Many CAN transceivers have an enable input,
- * which needs to be driven HIGH or LOW in order
- * for the transceiver to become operational.
- * Define USE_CAN_ENABLE to set the pin
- * defined below to HIGH upon startup.
- * Additionally define CAN_ENABLE_INVERTED
- * to drive it LOW instead.
+ * Maximum number of transmission retries
+ * upon CAN transmission failure
  */
-//#define USE_CAN_ENABLE
-//#define CAN_ENABLE_INVERTED
+#ifndef CAN_SEND_RETRIES
+#define CAN_SEND_RETRIES    100
+#endif
 
-/*
- * Pin configuration for the CAN_ENABLE signal:
- *    CAN_ENABLE <-> PA8
+/**
+ * Maximum number of times, the CAN RX FIFO
+ * is polled (in immediate successsion)
+ * for new, incoming messages
  */
-#ifdef USE_CAN_ENABLE
-#define GPIO_PORT_CAN_ENABLE    GPIOA
-#define GPIO_PIN_CAN_ENABLE     GPIO8
+#ifndef CAN_RECEIVE_TIMEOUT
+#define CAN_RECEIVE_TIMEOUT 10
 #endif
 
 // Import symbols from linker script
@@ -215,6 +216,7 @@ static inline void *memory_get_config2_addr(void)
 {
     return (void *) &config_page2;
 }
+
 
 #ifdef PLATFORM_ENABLE_UUID
 /**
