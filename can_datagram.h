@@ -11,7 +11,12 @@ extern "C" {
 
 #define CAN_DATAGRAM_VERSION 1
 
+/**
+ * When this bit is set in a CAN frame ID,
+ * the frame is considered the beginning of a datagram.
+ */
 #define ID_START_MASK (1 << 7)
+
 
 typedef struct {
     int protocol_version;
@@ -29,12 +34,13 @@ typedef struct {
     int _data_length_bytes_written;
     uint8_t _destination_nodes_read;
     uint8_t _destination_nodes_written;
-    uint16_t _data_bytes_read;
-    uint16_t _data_bytes_written;
-    uint16_t _data_buffer_size;
+    uint32_t _data_bytes_read;
+    uint32_t _data_bytes_written;
+    uint32_t _data_buffer_size;
     int _reader_state;
     int _writer_state;
 } can_datagram_t;
+
 
 /** Sets the structure field to default values. */
 void can_datagram_init(can_datagram_t *dt);

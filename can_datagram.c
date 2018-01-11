@@ -42,7 +42,7 @@ void can_datagram_input_byte(can_datagram_t *dt, uint8_t val)
             dt->crc = (dt->crc << 8) | val;
             dt->_crc_bytes_read ++;
 
-            if (dt->_crc_bytes_read == 4) {
+            if (dt->_crc_bytes_read >= 4) {
                 dt->_reader_state = STATE_DST_LEN;
             }
             break;
@@ -56,7 +56,7 @@ void can_datagram_input_byte(can_datagram_t *dt, uint8_t val)
             dt->destination_nodes[dt->_destination_nodes_read] = val;
             dt->_destination_nodes_read ++;
 
-            if (dt->_destination_nodes_read == dt->destination_nodes_len) {
+            if (dt->_destination_nodes_read >= dt->destination_nodes_len) {
                 dt->_reader_state = STATE_DATA_LEN;
             }
             break;
@@ -65,7 +65,7 @@ void can_datagram_input_byte(can_datagram_t *dt, uint8_t val)
             dt->data_len = (dt->data_len << 8) | val;
             dt->_data_length_bytes_read ++;
 
-            if (dt->_data_length_bytes_read == 4) {
+            if (dt->_data_length_bytes_read >= 4) {
                 dt->_reader_state = STATE_DATA;
             }
 
@@ -76,27 +76,27 @@ void can_datagram_input_byte(can_datagram_t *dt, uint8_t val)
             dt->data[dt->_data_bytes_read] = val;
             dt->_data_bytes_read ++;
 
-            if (dt->_data_bytes_read == dt->data_len) {
+            if (dt->_data_bytes_read >= dt->data_len) {
+                // Received the announced number of bytes
                 dt->_reader_state = STATE_TRAILING;
             }
 
-            if (dt->_data_buffer_size == dt->_data_bytes_read) {
+            if (dt->_data_bytes_read >= dt->_data_buffer_size) {
+                // Input buffer overflow
                 dt->_reader_state = STATE_TRAILING;
             }
 
             break;
 
         default:
-
-            /* Don't change state, stay here forever. */
+            // Don't change the reader state and drop trailing data
             break;
     }
 }
 
 bool can_datagram_is_complete(can_datagram_t *dt)
 {
-    return dt->_reader_state > 0 && dt->_data_bytes_read == dt->data_len
-           && dt->_data_length_bytes_read == 4;
+    return (dt->_reader_state == STATE_TRAILING);
 }
 
 bool can_datagram_is_valid(can_datagram_t *dt)
@@ -109,8 +109,8 @@ void can_datagram_start(can_datagram_t *dt)
     dt->_reader_state = STATE_PROTOCOL_VERSION;
     dt->_crc_bytes_read = 0;
     dt->_destination_nodes_read = 0;
-    dt->_data_bytes_read = 0;
     dt->_data_length_bytes_read = 0;
+    dt->_data_bytes_read = 0;
 }
 
 int can_datagram_output_bytes(can_datagram_t *dt, char *buffer, size_t buffer_len)
