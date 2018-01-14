@@ -6,12 +6,14 @@ from sys import exit
 from os.path import exists
 import logging
 from cvra_bootloader import page, commands, utils
+from cvra_bootloader.error import Error
 import msgpack
 from zlib import crc32
 from progressbar import ProgressBar
 from subprocess import Popen, PIPE
 from shlex import split
 from re import search
+from time import sleep
 
 
 def parse_commandline_args(args=None):
@@ -74,63 +76,73 @@ def flash_image(connection, binary, base_address, device_class, destinations,
 
     # First erase all pages
     for offset in range(0, len(binary), page_size):
-        if args.verbose:
-            # Otherwise log message ends up in progressbar
-            print("")
+        retry = True
+        while retry:
+            retry = False
 
-        # Instruct all destinations to erase a certain flash page
-        erase_command = commands.encode_erase_flash_page(base_address + offset,
-                                                         device_class)
-
-        # Failing to receive a reply does not need to result in program exit during flash erase.
-        # The erase frame might have been received and applied properly.
-        # If not, the flash write and checksum process will fail anyway.
-        res = utils.write_command_retry(connection, erase_command, destinations, retry_limit=5, error_exit=False)
-
-        # Treat the one byte replies of every node as boolean: 1=success, 0=erase failed
-        failed_boards = [str(id) for id, status in res.items()
-                         if msgpack.unpackb(status) != 1]
-
-        # Debug the received CAN replies
-        if args.verbose:
-            node_count = len(res.items())
-            logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
-            for id, status in res.items():
-                code = msgpack.unpackb(status)
-                if code != 1:
-                    continue
-                msg = "Board " + str(id) + " reports success"
-                logging.debug(msg)
-
-        if failed_boards:
-            if not args.verbose:
+            if args.verbose:
                 # Otherwise log message ends up in progressbar
                 print("")
 
-            # Print error code for all failed boards
-            for id, status in res.items():
-                code = msgpack.unpackb(status)
-                if code == 1:
-                    continue
-                msg = "Board " + str(id) + " reports error " + str(code)
-                if code == 0:
-                    error = "unspecified error"
-                elif code == 10:
-                    error = "illegal attempt to erase before app section"
-                elif code == 11:
-                    error = "illegal attempt to erase after app section"
-                elif code == 12:
-                    error = "device class mismatch"
-                else:
-                    error = "unrecognized status code"
-                msg = msg + " (" + error + ")"
-                logging.error(msg)
+            # Instruct all destinations to erase a certain flash page
+            erase_command = commands.encode_erase_flash_page(base_address + offset,
+                                                             device_class)
 
-            # Print list of failed board IDs
-            msg = ", ".join(failed_boards)
-            msg = "The following board" + ("s" if len(failed_boards) != 1 else "") + " failed to erase flash pages: {}".format(msg)
-            logging.critical(msg)
-            errors_occured = True
+            # Failing to receive a reply does not need to result in program exit during flash erase.
+            # The erase frame might have been received and applied properly.
+            # If not, the flash write and checksum process will fail anyway.
+            res = utils.write_command_retry(connection, erase_command, destinations, retry_limit=5, error_exit=False)
+
+            # Treat the one byte replies of every node as boolean: 1=success, 0=erase failed
+            failed_boards = [str(id) for id, status in res.items()
+                             if msgpack.unpackb(status) != 1]
+
+            # Debug the received CAN replies
+            if args.verbose:
+                node_count = len(res.items())
+                logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
+                for id, status in res.items():
+                    code = msgpack.unpackb(status)
+                    if code != 1:
+                        continue
+                    msg = "Board " + str(id) + " reports success"
+                    logging.debug(msg)
+
+            # Are there any targets, which failed to perform?
+            if failed_boards:
+                if not args.verbose:
+                    # Otherwise log message ends up in progressbar
+                    print("")
+
+                # Print error code for all failed boards
+                for id, status in res.items():
+                    code = msgpack.unpackb(status)
+                    # Success
+                    if code == Error.SUCCESS:
+                        continue
+                    msg = "Board " + str(id) + " reports error " + str(code)
+                    if code == Error.UNSPECIFIED_ERROR:
+                        error = "unspecified error"
+                    elif code == Error.CORRUPT_DATAGRAM:
+                        error = "datagram error; please resend"
+                        retry = True
+                    elif code == Error.FLASH_ERASE_ERROR_BEFORE_APP:
+                        error = "illegal attempt to erase before app section"
+                    elif code == Error.FLASH_ERASE_ERROR_AFTER_APP:
+                        error = "illegal attempt to erase after app section"
+                    elif code == Error.FLASH_ERASE_ERROR_DEVICE_CLASS_MISMATCH:
+                        error = "device class mismatch"
+                    else:
+                        error = "unrecognized status code"
+                    msg = msg + " (" + error + ")"
+                    logging.error(msg)
+
+                if not retry:
+                    # Print list of failed board IDs
+                    msg = ", ".join(failed_boards)
+                    msg = "The following board" + ("s" if len(failed_boards) != 1 else "") + " failed to erase flash pages: {}".format(msg)
+                    logging.critical(msg)
+                    errors_occured = True
 
         pbar.update(offset)
 
@@ -142,57 +154,69 @@ def flash_image(connection, binary, base_address, device_class, destinations,
     # Then write all pages in chunks
     for offset, chunk in enumerate(page.slice_into_pages(binary, page_size)):
         offset *= page_size
-        command = commands.encode_write_flash(chunk,
-                                              base_address + offset,
-                                              device_class)
 
-        # In case no reply is received, the instruction to write to flash should not be repeated,
-        # as this might cause problems on any system that received the first write frame.
-        # Also, it does not need to result in program exit, as the checksum process
-        # will ultimately determine, if the flash write was successful or not.
-        res = utils.write_command_retry(connection, command, destinations, retry_limit=0, error_exit=False)
+        retry = True
+        while retry:
+            retry = False
+            sleep(0.1)
 
-        failed_boards = [str(id) for id, status in res.items()
-                         if msgpack.unpackb(status) != 1]
+            command = commands.encode_write_flash(chunk,
+                                                  base_address + offset,
+                                                  device_class)
 
-        # Debug the received CAN replies
-        if args.verbose:
-            node_count = len(res.items())
-            logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
-            for id, status in res.items():
-                code = msgpack.unpackb(status)
-                if code != 1:
-                    continue
-                msg = "Board " + str(id) + " reports success"
-                logging.debug(msg)
+            # In case no reply is received, the instruction to write to flash should not be repeated,
+            # as this might cause problems on any system that received the first write frame.
+            # Also, it does not need to result in program exit, as the checksum process
+            # will ultimately determine, if the flash write was successful or not.
+            res = utils.write_command_retry(connection, command, destinations, retry_limit=0, error_exit=False, retry_forever=True)
 
-        if failed_boards:
-            # Print all received error codes
-            for id, status in res.items():
-                code = msgpack.unpackb(status)
-                if code == 1:
-                    continue
-                msg = "Board " + str(id) + " reports error " + str(code)
-                if code == 0:
-                    error = "unspecified error"
-                elif code == 20:
-                    error = "illegal attempt to write before app section"
-                elif code == 21:
-                    error = "illegal attempt to write after app section"
-                elif code == 22:
-                    error = "device class mismatch"
-                elif code == 23:
-                    error = "image size not specified"
-                else:
-                    error = "unrecognized status code"
-                msg = msg + " (" + error + ")"
-                logging.error(msg)
+            failed_boards = [str(id) for id, status in res.items()
+                             if msgpack.unpackb(status) != 1]
 
-            # Print list of failed boards
-            msg = ", ".join(failed_boards)
-            msg = "The following board" + ("s" if len(failed_boards) != 1 else "") + " failed to write flash pages: {}".format(msg)
-            logging.critical(msg)
-            errors_occured = True
+            # Debug the received CAN replies
+            if args.verbose:
+                node_count = len(res.items())
+                logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
+                for id, status in res.items():
+                    code = msgpack.unpackb(status)
+                    if code != 1:
+                        continue
+                    msg = "Board " + str(id) + " reports success"
+                    logging.debug(msg)
+
+            if failed_boards:
+                # Print all received error codes
+                for id, status in res.items():
+                    code = msgpack.unpackb(status)
+                    if code == Error.SUCCESS:
+                        continue
+                    msg = "Board " + str(id) + " reports error " + str(code)
+                    if code == Error.UNSPECIFIED_ERROR:
+                        error = "unspecified error"
+                    elif code == Error.CORRUPT_DATAGRAM:
+                        error = "datagram error; please resend"
+                        retry = True
+                    elif code == Error.FLASH_WRITE_ERROR_BEFORE_APP:
+                        error = "illegal attempt to write before app section"
+                    elif code == Error.FLASH_WRITE_ERROR_AFTER_APP:
+                        error = "illegal attempt to write after app section"
+                    elif code == Error.FLASH_WRITE_ERROR_DEVICE_CLASS_MISMATCH:
+                        error = "device class mismatch"
+                    elif code == Error.FLASH_WRITE_ERROR_UNKNOWN_SIZE:
+                        error = "image size not specified"
+                    elif code == Error.FLASH_WRITE_ERROR_NOT_ERASED:
+                        error = "target flash area not erased properly"
+                    else:
+                        error = "unrecognized status code"
+                    msg = msg + " (" + error + ")"
+                    logging.error(msg)
+
+                if not retry:
+                    # Print list of failed boards
+                    msg = ", ".join(failed_boards)
+                    msg = "The following board" + ("s" if len(failed_boards) != 1 else "") + " failed to write flash pages: {}".format(msg)
+                    logging.critical(msg)
+                    errors_occured = True
 
         pbar.update(offset)
     pbar.finish()
@@ -281,7 +305,7 @@ def enumerate_online_nodes(connection, boards):
     Returns a set containing the online boards.
     """
 
-    # Send ping broadcast
+    # Send ping request to all requested nodes
     utils.write_command(connection, commands.encode_ping(), boards)
 
     # Evaluate replies

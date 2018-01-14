@@ -13,6 +13,20 @@ from can.adapters.socketcan import SocketCANInterface
 from can.adapters.peak_pcan import PeakPCANInterface
 
 
+#
+# Number of seconds to sleep between CAN frame transmissions
+#
+# This number depends on the performance and buffering capabilities
+# of the used CAN adapter as well as on the amount of other chatter on the CAN bus.
+#
+INTER_FRAME_DELAY = 0.003
+
+#
+# Number of seconds to wait before retrying a failed CAN datagram transmission
+#
+RETRY_DELAY = 0.010
+
+
 class ConnectionArgumentParser(argparse.ArgumentParser):
     """
     Subclass of ArgumentParser with default arguments for connection handling (SocketCAN or serial port).
@@ -149,14 +163,18 @@ def write_command(connection, command, destinations, source=0):
 
     for frame in frames:
         connection.send_frame(frame)
+        if INTER_FRAME_DELAY > 0.0:
+            sleep(INTER_FRAME_DELAY)
 
 
-def write_command_retry(connection, command, destinations, source=0, retry_limit=3, error_exit=True):
+def write_command_retry(connection, command, destinations, source=0, retry_limit=3, error_exit=True, retry_forever=False):
     """
     Writes a command, retries as long as there is no answer and returns a dictionary containing
     a map of each board ID and its answer.
     """
     logging.debug("Initiating transmission (attempt 1/" + str(1 + retry_limit) + ")...")
+
+    # Transmit command datagram
     write_command(connection, command, destinations, source)
 
     # Instantiate a datagram yielder
@@ -168,24 +186,30 @@ def write_command_retry(connection, command, destinations, source=0, retry_limit
         # Attempt to yield a datagram from the CAN bus
         dt = next(reader)
 
-        # Did we receive something?
+        # Did we receive something within the configured timeout period?
         if dt is None:
             # If there's a timeout, determine which boards didn't answer.
             timedout_boards = list(set(destinations) - set(answers))
-            msg = "The following destinations did not answer: {}".format(", ".join(str(t) for t in timedout_boards))
+            msg = "Did not receive a valid response datagram from the following targets: {}".format(", ".join(str(t) for t in timedout_boards))
             logging.warning(msg)
 
-            # Retry limit reached?
-            if retry_count >= retry_limit:
-                if error_exit:
-                    logging.critical("No reply and retry limit reached. Aborting.")
-                    exit(1)
-                else:
-                    logging.critical("No reply and retry limit reached. Skipping.")
-                    return answers
+            if retry_forever:
+                logging.debug("Retrying transmission (attempt " + str(retry_count + 2) + ")...")
+            else:
+                # Retry limit reached?
+                if retry_count >= retry_limit:
+                    if error_exit:
+                        logging.critical("No reply and retry limit reached. Aborting.")
+                        exit(1)
+                    else:
+                        logging.critical("No reply and retry limit reached. Skipping.")
+                        return answers
 
-            # Retry
-            logging.debug("Retrying transmission (attempt " + str(retry_count + 2) + "/" + str(1 + retry_limit) + ")...")
+                # Retry
+                if RETRY_DELAY > 0.0:
+                    sleep(RETRY_DELAY)
+                logging.debug("Retrying transmission (attempt " + str(retry_count + 2) + "/" + str(1 + retry_limit) + ")...")
+
             write_command(connection, command, timedout_boards, source)
             retry_count += 1
             continue
