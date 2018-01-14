@@ -95,7 +95,9 @@ class SLCANInterface:
     def send_command(self, cmd):
         cmd += '\r'
         cmd = cmd.encode('ascii')
+        self.port.flushOutput()
         self.port.write(cmd)
+        self.port.flushOutput()
 
     def decode_frame(self, msg):
         if len(msg) < self.MIN_MSG_LEN:
@@ -145,6 +147,7 @@ class SLCANInterface:
 
     def receive_frame(self):
         try:
-            return self.rx_queue.get(True, 1)    # block with timeout 1 sec
+            # Try to retrieve a frame from the queue within specified timeout period
+            return self.rx_queue.get(block=True, timeout=3)
         except:
             return None
