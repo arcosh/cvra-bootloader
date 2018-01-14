@@ -40,6 +40,7 @@ target.stm32f3:
 target.stm32f4:
     - platform/mcu/stm32f4/flash_writer.c
     - platform/mcu/stm32f4/can_interface.c
+    - platform/mcu/stm32f4/can_fifo.c
     - platform/mcu/stm32f4/led.c
 
 include_directories:
