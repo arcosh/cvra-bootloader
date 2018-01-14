@@ -8,7 +8,7 @@ setup(
     author_email='info@cvra.ch',
     url='https://github.com/cvra/can-bootloader',
     license='BSD',
-    packages=['cvra_bootloader', 'can'],
+    packages=['cvra_bootloader', 'can', 'can.adapters'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -30,6 +30,7 @@ setup(
             'bootloader_read_config=cvra_bootloader.read_config:main',
             'bootloader_run_app=cvra_bootloader.run_application:main',
             'bootloader_write_config=cvra_bootloader.write_config:main',
+            'bootloader_invoke=cvra_bootloader.invoke:main',
             ],
         },
     )
