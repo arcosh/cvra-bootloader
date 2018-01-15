@@ -6,6 +6,7 @@
 #include "boot_arg.h"
 #include "config.h"
 #include "command.h"
+#include "error.h"
 
 
 /**

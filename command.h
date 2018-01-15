@@ -9,70 +9,12 @@
 extern "C" {
 #endif
 
-/** Invalid command format.
- *
- * Means that the command format is invalid, for example if the command index
- * is not an integer. */
-#define ERR_INVALID_COMMAND 1
-
-/** Command index could not be found in command table. */
-#define ERR_COMMAND_NOT_FOUND 2
-
-/** Protocol command set version doesn't match received one. */
-#define ERR_INVALID_COMMAND_SET_VERSION 3
 
 /** Version of the protocol command set. */
 #define COMMAND_SET_VERSION 2
 
 /** Total number of supported commands */
 #define COMMAND_COUNT 9
-
-/**
- * Possible reply values for erase flash command
- *
- * 1 and 0 are kept for backwards compatibility with previous client versions,
- * which evaluate 1 as true/success respectively 0 as false/failed.
- */
-#define FLASH_ERASE_SUCCESS                         1
-#define FLASH_ERASE_UNSPECIFIED_ERROR               0
-#define FLASH_ERASE_ERROR_BEFORE_APP                10
-#define FLASH_ERASE_ERROR_AFTER_APP                 11
-#define FLASH_ERASE_ERROR_DEVICE_CLASS_MISMATCH     12
-
-/**
- * Possible reply values for write flash command
- *
- * 1 and 0 are kept for backwards compatibility with previous client versions,
- * which evaluate 1 as true/success respectively 0 as false/failed.
- */
-#define FLASH_WRITE_SUCCESS                         1
-#define FLASH_WRITE_UNSPECIFIED_ERROR               0
-#define FLASH_WRITE_ERROR_BEFORE_APP                20
-#define FLASH_WRITE_ERROR_AFTER_APP                 21
-#define FLASH_WRITE_ERROR_DEVICE_CLASS_MISMATCH     22
-#define FLASH_WRITE_ERROR_UNKNOWN_SIZE              23
-
-/**
- * Possible reply values for CRC command
- * besides to CRC value itself
- */
-#define CRC_ERROR_ADDRESS_UNSPECIFIED               30
-#define CRC_ERROR_LENGTH_UNSPECIFIED                31
-#define CRC_ERROR_ILLEGAL_ADDRESS                   32
-
-/**
- * In order to speed up application development,
- * e.g. while flashing through a debugger device,
- * one might wish to (temporarily) disable CRC validation
- * of the flashed application by the bootloader.
- * Define COMMAND_JUMP_DISABLE_CRC_CHECKING to do so.
- * When defined, the bootloader will run the application
- * regardless of it's CRC value.
- * Otherwise the bootloader will not run the application
- * in case the CRC does not match the CRC stored in the config
- * but will remain in the bootloader forever.
- */
-//#define COMMAND_JUMP_DISABLE_CRC_CHECKING
 
 
 /**
