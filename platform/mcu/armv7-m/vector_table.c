@@ -9,6 +9,7 @@ extern uint32_t _eram;
 
 extern void platform_main(int);
 extern void fault_handler(void);
+extern void systick_handler(void);
 extern void reset_handler(void);
 
 __attribute__ ((section(".vectors")))
@@ -28,7 +29,8 @@ void (*const vector_table[]) (void) = {
     0,              // debug_handler
     0,              // reserved
     fault_handler,  // pendsv_handler
-    fault_handler,  // systick_handler
+    systick_handler,  // systick_handler
+
     fault_handler,  // IRQ0
     fault_handler,  // IRQ1
     fault_handler,  // IRQ2
