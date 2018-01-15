@@ -1,6 +1,10 @@
 
 import can
-import termios
+try:
+    from termios import error as termios_error
+except ImportError:
+    # Dummy termios.error
+    termios_error = Exception
 import serial
 from serial.serialutil import SerialException
 from queue import Queue
@@ -37,7 +41,7 @@ class SLCANInterface:
                 can.logging.critical("The specified port could not be opened.")
                 raise
                 exit(e.errno)
-        except termios.error as e:
+        except termios_error as e:
             if e.args[0] == 25:
                 # Inappropriate ioctl for device
                 can.logging.critical("The specified port appears to be busy. Is it in use by another program?")
