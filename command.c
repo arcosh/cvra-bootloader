@@ -36,7 +36,7 @@ command_t* get_command_by_index(uint8_t index)
         if (commands[i].index == index)
             return &commands[i];
 
-    // Search was unsuccessfull
+    // Search was unsuccessful: No such command
     return 0;
 }
 
@@ -47,10 +47,11 @@ void command_erase_flash_page(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloa
     uint64_t tmp = 0;
     char device_class[64];
 
+    // Read address (unsigned 64-bit integer) from MessagePack
     cmp_read_uinteger(args, &tmp);
     address = (void *)(uintptr_t)tmp;
 
-    // refuse to overwrite bootloader or config pages
+    // Refuse to overwrite bootloader or config pages
     if (address < memory_get_app_addr()) {
         cmp_write_uint(out, FLASH_ERASE_ERROR_BEFORE_APP);
         return;
@@ -62,21 +63,22 @@ void command_erase_flash_page(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloa
         return;
     }
 
+    // Read device class (string) from MessagePack
     uint32_t size = 64;
     cmp_read_str(args, device_class, &size);
 
+    // Check device class
     if (strcmp(device_class, config->device_class) != 0) {
         cmp_write_uint(out, FLASH_ERASE_ERROR_DEVICE_CLASS_MISMATCH);
         return;
     }
 
+    // Erase flash at specified address
     flash_writer_unlock();
-
     flash_writer_page_erase(address);
-
     flash_writer_lock();
 
-    // erase succeeded
+    // Erasure succeeded
     cmp_write_uint(out, FLASH_ERASE_SUCCESS);
 }
 
@@ -89,10 +91,11 @@ void command_write_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_c
     uint32_t size;
     char device_class[64];
 
+    // Read address (unsigned 64-bit integer) from MessagePack
     cmp_read_uinteger(args, &tmp);
     address = (void *)(uintptr_t)tmp;
 
-    // refuse to overwrite bootloader or config pages
+    // Refuse to overwrite bootloader or config pages
     if (address < memory_get_app_addr()) {
         cmp_write_uint(out, FLASH_WRITE_ERROR_BEFORE_APP);
         return;
@@ -104,20 +107,26 @@ void command_write_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_c
         return;
     }
 
+    // Read device class (string) from MessagePack
     size = 64;
     cmp_read_str(args, device_class, &size);
 
+    // Check device class
     if (strcmp(device_class, config->device_class) != 0) {
         cmp_write_uint(out, FLASH_WRITE_ERROR_DEVICE_CLASS_MISMATCH);
         return;
     }
 
+    // Read data size (integer) from MessagePack
     if (!cmp_read_bin_size(args, &size)) {
         cmp_write_uint(out, FLASH_WRITE_ERROR_UNKNOWN_SIZE);
         return;
     }
 
-    /* This is ugly, yet required to achieve zero copy. */
+    /*
+     * Get pointer to received data buffer.
+     * This is ugly, yet required to achieve zero copy.
+     */
     cmp_mem_access_t *cma = (cmp_mem_access_t *)(args->buf);
     src = cmp_mem_access_get_ptr_at_pos(cma, cmp_mem_access_get_pos(cma));
 
@@ -137,10 +146,9 @@ void command_write_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_c
     // Write received data to flash
     flash_writer_unlock();
     flash_writer_page_write(address, src, size);
-
     flash_writer_lock();
 
-    // writing to flash succeeded
+    // Writing to flash succeeded
     cmp_write_bool(out, FLASH_WRITE_SUCCESS);
     return;
 }
@@ -152,11 +160,14 @@ void command_read_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_co
     uint64_t tmp;
     uint32_t size;
 
+    // Read address (unsigned 64-bit integer) from MessagePack
     cmp_read_uinteger(args, &tmp);
     address = (void *)(uintptr_t)tmp;
 
+    // Read size (unsigned 32-bit integer) from MessagePack
     cmp_read_u32(args, &size);
 
+    // Return MessagePack with binary data
     cmp_write_bin(out, address, size);
 }
 
@@ -185,10 +196,7 @@ void command_crc_region(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_co
     uint32_t size;
     uint64_t tmp;
 
-//    if (argc != 2)
-//        goto done;
-
-    // First command argument: address
+    // Read first command argument from MessagePack: address (unsigned 64-bit integer)
     if (!cmp_read_uinteger(args, &tmp))
     {
         cmp_write_uint(out, CRC_ERROR_ADDRESS_UNSPECIFIED);
@@ -196,28 +204,32 @@ void command_crc_region(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_co
     }
     address = (void *)(uintptr_t)tmp;
 
-    // Second command argument: size
+    // Second command argument: size (unsigned 32-bit integer)
     if (!cmp_read_uint(args, &size))
     {
         cmp_write_uint(out, CRC_ERROR_LENGTH_UNSPECIFIED);
         return;
     }
 
-    // Check if parameters are legal
-    uint32_t address1 = (uint32_t) address;
-    uint32_t address2 = address1 + size;
-    // Flash boundaries from linker script
+    // Import flash boundaries from linker script
     extern uint32_t flash_begin;
     extern uint32_t flash_end;
+
+    // Check if the provided arguments are acceptable
+    uint32_t address1 = (uint32_t) address;
+    uint32_t address2 = address1 + size;
     if (address1 < (uint32_t) (&flash_begin) || address1 >= (uint32_t) (&flash_end)
      || address2 < (uint32_t) (&flash_begin) || address2 >= (uint32_t) (&flash_end))
     {
-        // TODO: The above statement is true, although it should return false
+        // TODO: Test, whether the above statement can become true, even if it should return false.
         cmp_write_uint(out, CRC_ERROR_ILLEGAL_ADDRESS);
         return;
     }
 
+    // Calculate checksum over the requested address range
     crc = crc32(0, address, size);
+
+    // Return calculated checksum value
     cmp_write_uint(out, crc);
 }
 
@@ -231,6 +243,7 @@ void command_config_update(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader
 
 void command_ping(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
+    // Reply: 1
     cmp_write_bool(out, 1);
 }
 
@@ -247,17 +260,20 @@ static bool flash_write_and_verify(void *addr, void *data, size_t len)
 
 void command_config_write_to_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
+    // Increment the number of times, this board has been flashed
     config->update_count += 1;
 
+    // Prepare a zero-padded configuration page buffer
     static uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
-
     memset(config_page_buffer, 0, CONFIG_PAGE_SIZE);
-
     config_write(config_page_buffer, config, CONFIG_PAGE_SIZE);
 
+    // Get pointers to configuration pages in flash memory
     void *config1 = memory_get_config1_addr();
     void *config2 = memory_get_config2_addr();
 
+    // Update both config pages
+    // The update order shall prevent a valid configuration from being overwritten, if one update fails.
     bool success = false;
     if (config_is_valid(config2, CONFIG_PAGE_SIZE)) {
         if (flash_write_and_verify(config1, config_page_buffer, CONFIG_PAGE_SIZE)) {
@@ -276,6 +292,7 @@ void command_config_write_to_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bo
         success &= flash_write_and_verify(config2, config_page_buffer, CONFIG_PAGE_SIZE);
     }
 
+    // Return whether updating both config pages was successful or not
     if (success) {
         cmp_write_bool(out, 1);
     } else {
@@ -286,6 +303,7 @@ void command_config_write_to_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bo
 
 void command_config_read(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
 {
+    // Return currently active configuration
     config_write_messagepack(out, config);
 }
 
@@ -314,21 +332,22 @@ int execute_datagram_commands(char *data, size_t data_len, const command_t *comm
         return -ERR_INVALID_COMMAND_SET_VERSION;
     }
 
+    // Read requested command index from MessagePack
     read_success = cmp_read_int(&command_reader, &command_index);
 
     if (!read_success) {
         return -ERR_INVALID_COMMAND;
     }
 
+    // Read the list of arguments for this command from MessagePack
     read_success = cmp_read_array(&command_reader, &argc);
 
-    /* If we cannot read array size, assume it is because we don't have
-     * arguments. */
+    // If we cannot read the array size, we assume it is because no arguments were provided.
     if (!read_success) {
         argc = 0;
     }
 
-    // Depending on command type, invoke the corresponding command handler
+    // Depending on the command type, invoke the corresponding command handler
     command_t* cmd;
     cmd = get_command_by_index(command_index);
     if (cmd != 0)
