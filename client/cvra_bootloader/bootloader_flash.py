@@ -100,13 +100,13 @@ def flash_image(connection, binary, base_address, device_class, destinations,
             # Debug the received CAN replies
             if args.verbose:
                 node_count = len(res.items())
-                logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
+                logging.info("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
                 for id, status in res.items():
                     code = msgpack.unpackb(status)
                     if code != 1:
                         continue
                     msg = "Board " + str(id) + " reports success"
-                    logging.debug(msg)
+                    logging.info(msg)
 
             # Are there any targets, which failed to perform?
             if failed_boards:
@@ -176,13 +176,13 @@ def flash_image(connection, binary, base_address, device_class, destinations,
             # Debug the received CAN replies
             if args.verbose:
                 node_count = len(res.items())
-                logging.debug("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
+                logging.info("Got replies from " + str(node_count) + " node" + ("s" if node_count != 1 else "") + ": " + ", ".join([str(id) for id, success in res.items()]))
                 for id, status in res.items():
                     code = msgpack.unpackb(status)
                     if code != 1:
                         continue
                     msg = "Board " + str(id) + " reports success"
-                    logging.debug(msg)
+                    logging.info(msg)
 
             if failed_boards:
                 # Print all received error codes
@@ -241,12 +241,12 @@ def verify_flash_write(connection, binary, base_address, destinations):
     """
 
     # Calculate checksum on local binary
-    logging.debug("Generating checksum of input file...")
+    logging.info("Generating checksum of input file...")
     expected_crc = crc32(binary)
     print("Expecting checksum: " + format(expected_crc, '#08x'))
 
     # Instruct the target nodes to calculate a checksum on their flash content
-    logging.debug("Encoding request to calculate checksum for address range " + format(base_address, "#010x") + "-" + format(base_address + len(binary), "#010x"))
+    logging.info("Encoding request to calculate checksum for address range " + format(base_address, "#010x") + "-" + format(base_address + len(binary), "#010x"))
     command = commands.encode_crc_region(base_address, len(binary))
     utils.write_command(connection, command, destinations)
 
@@ -305,6 +305,8 @@ def enumerate_online_nodes(connection, boards):
     Returns a set containing the online boards.
     """
 
+    logging.info("Searching for bootloader nodes...")
+
     # Send ping request to all requested nodes
     utils.write_command(connection, commands.encode_ping(), boards)
 
@@ -325,7 +327,7 @@ def image_is_elf(filename):
 
 
 def elf_convert_to_binary(infile, outfile):
-    logging.debug("Converting ELF to binary: " + infile + " -> " + outfile)
+    logging.info("Converting ELF to binary: " + infile + " -> " + outfile)
     # Run objcopy to convert ELF to binary
     cmd = "arm-none-eabi-objcopy -O binary " + infile + " " + outfile
     Popen(split(cmd)).wait()
@@ -333,13 +335,13 @@ def elf_convert_to_binary(infile, outfile):
 
 def elf_extract_start_address(filename):
     # Run objdump to list the ELF's sections
-    logging.debug("Invoking arm-none-eabi-objdump to list ELF sections...")
+    logging.info("Invoking arm-none-eabi-objdump to list ELF sections...")
     cmd = "arm-none-eabi-objdump -h " + filename
     lines = Popen(split(cmd), stdout=PIPE).communicate()[0].decode("utf-8")
 #    lines = lines.split("\n")
 
     # Search for vector table or code section
-    logging.debug("Parsing section table...")
+    logging.info("Parsing section table...")
     find_section_names = [".vector", ".vectors", ".isr_vector", ".isr_vector_table", ".vector_table", ".text"]
     for section in find_section_names:
         # Search for section name in objdump output using regular expressions
@@ -350,14 +352,14 @@ def elf_extract_start_address(filename):
             # not found
             continue
         # found
-        logging.debug("Found section: " + section)
+        logging.info("Found section: " + section)
         address = m.group(1)
         if address is None:
             logging.error("Encountered illegal address for section " + section)
             continue
         if address[:2] != "0x" and address[:2] != "0X":
             address = "0x" + address.zfill(8)
-        logging.debug("Extracted target address: " + address)
+        logging.info("Extracted target address: " + address)
         address = int(address, 16)
         if address is None:
             logging.error("Failed to convert address to integer: " + section)
@@ -385,7 +387,7 @@ def main():
 
     # Determine input file format
     if image_is_elf(args.image_file):
-        logging.debug("File format: ELF image")
+        logging.info("File format: ELF image")
 
         # Parse ELF sections
         elf_filename = args.image_file
@@ -398,9 +400,9 @@ def main():
         elf_convert_to_binary(elf_filename, binary_filename)
         args.image_file = binary_filename
     else:
-        print("File format: Binary image")
+        logging.info("File format: Binary image")
 
-    logging.debug("Flashing to address: " + format(args.base_address, "#010x"))
+    logging.info("Flashing to address: " + format(args.base_address, "#010x"))
 
     # Read binary to variable
     with open(args.image_file, 'rb') as input_file:

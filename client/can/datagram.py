@@ -86,9 +86,10 @@ def decode_datagram(data):
         can.logging.debug("Rejected datagram with incompatible version " + str(version) + " instead of " + str(DATAGRAM_VERSION) + ".")
         return None
     except CRCMismatchError:
-        can.logging.debug("Rejected datagram with incorrect CRC.")
+        can.logging.info("Rejected datagram with incorrect CRC.")
         return None
 
+    can.logging.debug("Datagram successfully decoded.")
     return data, destinations
 
 def datagram_to_frames(datagram, source):

@@ -88,7 +88,7 @@ class SocketCANInterface:
         try:
             self.socket.send(data)
         except socket.timeout:
-            can.logging.debug("Socket transmission timed out")
+            can.logging.warning("Socket transmission timed out.")
             pass
         except OSError as e:
             if e.errno == errno.ENOBUFS:

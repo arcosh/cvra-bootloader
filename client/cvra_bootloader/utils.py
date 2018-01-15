@@ -40,16 +40,24 @@ class ConnectionArgumentParser(argparse.ArgumentParser):
         # Disable line-wrapping in description and epilog
         self.formatter_class = argparse.RawDescriptionHelpFormatter
 
-        self.add_argument('-p', '--port', dest='serial_device',
+        self.add_argument('-p', '--port',
+                          dest='serial_device',
                           help='Serial port to which the CAN bridge is connected',
                           metavar='DEVICE')
 
-        self.add_argument('-i', '--interface', dest='can_interface',
+        self.add_argument('-i', '--interface',
+                          dest='can_interface',
                           help="SocketCAN interface, e.g 'can0' (Linux only)",
                           metavar='INTERFACE')
 
         self.add_argument("-v", "--verbose",
-                          help="Print verbose output",
+                          dest="verbose",
+                          help="Print debug messages",
+                          action="store_true")
+
+        self.add_argument("-vv", "--debug",
+                          dest="debug",
+                          help="Print even more debug messages",
                           action="store_true")
 
     def parse_args(self, *args, **kwargs):
@@ -63,6 +71,9 @@ class ConnectionArgumentParser(argparse.ArgumentParser):
             self.error("You can only use one CAN interface at a time.")
 
         if args.verbose:
+            logging.getLogger().setLevel(logging.INFO)
+
+        if args.debug:
             logging.getLogger().setLevel(logging.DEBUG)
 
         return args
@@ -80,13 +91,13 @@ def open_connection(args):
 
     if args.can_interface:
         if args.can_interface[:4] == "pcan":
-            logging.debug("Selected Peak PCAN interface.")
+            logging.info("Selected Peak PCAN interface.")
             return PeakPCANInterface()
         else:
-            logging.debug("Selected SocketCAN interface.")
+            logging.info("Selected SocketCAN interface.")
             return SocketCANInterface(args.can_interface)
     elif args.serial_device:
-        logging.debug("Selected SLCAN interface.")
+        logging.info("Selected SLCAN interface.")
         return SLCANInterface(args.serial_device)
 
 
@@ -138,7 +149,7 @@ def ping_board(connection, destination):
 
     Returns True if it is online, false otherwise.
     """
-    logging.debug("Pinging device " + str(destination) + "...")
+    logging.info("Pinging device " + str(destination) + "...")
     write_command(connection, commands.encode_ping(), [destination])
 
     reader = read_can_datagrams(connection)
@@ -149,7 +160,7 @@ def ping_board(connection, destination):
         logging.warn("Ping to device " + str(destination) + " timed out.")
         return False
 
-    logging.debug("Ping reply received from device " + str(destination) + ".")
+    logging.info("Ping reply received from device " + str(destination) + ".")
     return True
 
 
@@ -172,7 +183,7 @@ def write_command_retry(connection, command, destinations, source=0, retry_limit
     Writes a command, retries as long as there is no answer and returns a dictionary containing
     a map of each board ID and its answer.
     """
-    logging.debug("Initiating transmission (attempt 1/" + str(1 + retry_limit) + ")...")
+    logging.info("Initiating transmission (attempt 1/" + str(1 + retry_limit) + ")...")
 
     # Transmit command datagram
     write_command(connection, command, destinations, source)
@@ -194,7 +205,7 @@ def write_command_retry(connection, command, destinations, source=0, retry_limit
             logging.warning(msg)
 
             if retry_forever:
-                logging.debug("Retrying transmission (attempt " + str(retry_count + 2) + ")...")
+                logging.info("Retrying transmission (attempt " + str(retry_count + 2) + ")...")
             else:
                 # Retry limit reached?
                 if retry_count >= retry_limit:
@@ -202,13 +213,13 @@ def write_command_retry(connection, command, destinations, source=0, retry_limit
                         logging.critical("No reply and retry limit reached. Aborting.")
                         exit(1)
                     else:
-                        logging.critical("No reply and retry limit reached. Skipping.")
+                        logging.error("No reply and retry limit reached. Skipping.")
                         return answers
 
                 # Retry
                 if RETRY_DELAY > 0.0:
                     sleep(RETRY_DELAY)
-                logging.debug("Retrying transmission (attempt " + str(retry_count + 2) + "/" + str(1 + retry_limit) + ")...")
+                logging.info("Retrying transmission (attempt " + str(retry_count + 2) + "/" + str(1 + retry_limit) + ")...")
 
             write_command(connection, command, timedout_boards, source)
             retry_count += 1
@@ -227,10 +238,10 @@ def config_update_and_save(connection, config, destinations):
     Keys not in the given config are left unchanged.
     """
     # First send the updated config
-    logging.debug("Encoding config udpate: " + str(config))
+    logging.info("Encoding config udpate: " + str(config))
     command = commands.encode_update_config(config)
     write_command_retry(connection, command, destinations)
 
     # Then save the config to flash
-    logging.debug("Requesting config write to flash...")
+    logging.info("Requesting config write to flash...")
     write_command_retry(connection, commands.encode_save_config(), destinations)
