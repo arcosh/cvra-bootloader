@@ -16,6 +16,19 @@ from re import search
 from time import sleep
 
 
+#
+# Maximum number of times to attempt pinging
+# the requested targets before giving up
+#
+ENUMERATION_RETRIES = 3
+
+#
+# Number of seconds to wait after sending a ping datagram
+# before attempting to yield a response datagram
+#
+ENUMERATION_RESPONSE_DELAY = 0.010
+
+
 def parse_commandline_args(args=None):
     """
     Parses the program commandline arguments.
@@ -300,6 +313,11 @@ def verification_failed(failed_nodes):
     exit(4)
 
 
+def all_boards_online(boards, online_boards):
+    # All IDs which are in set 'boards' must also be in set 'online_boards'
+    return (not (False in [id in online_boards for id in boards]))
+
+
 def enumerate_online_nodes(connection, boards):
     """
     Returns a set containing the online boards.
@@ -307,18 +325,36 @@ def enumerate_online_nodes(connection, boards):
 
     logging.info("Searching for bootloader nodes...")
 
-    # Send ping request to all requested nodes
-    utils.write_command(connection, commands.encode_ping(), boards)
-
-    # Evaluate replies
+    # Initiate a response datagram reader
     reader = utils.read_can_datagrams(connection)
     online_boards = set()
-    for dt in reader:
+    retries = ENUMERATION_RETRIES
+    while retries > 0:
+        # Send ping request to all requested nodes
+        utils.write_command(connection, commands.encode_ping(), boards)
+
+        # Wait a little
+        sleep(ENUMERATION_RESPONSE_DELAY)
+        retries -= 1
+
+        # Attempt to yield a response datagram or timeout
+        dt = next(reader)
         if dt is None:
-            break
+            continue
+
+        # Append responding board to list of online nodes
         _, _, src = dt
         online_boards.add(src)
+        logging.info("Node {} is online.".format(src))
 
+        if all_boards_online(boards, online_boards):
+            # All requested boards have replied
+            break
+
+    if not all_boards_online(boards, online_boards):
+        logging.info("Timeout waiting for response.")
+
+    # Return list of boards, which replied
     return online_boards
 
 
@@ -415,7 +451,7 @@ def main():
     online_boards = enumerate_online_nodes(can_connection, args.ids)
 
     # Make sure, all specified target nodes are online
-    if online_boards != set(args.ids):
+    if not all_boards_online(set(args.ids), online_boards):
         offline_boards = [str(i) for i in set(args.ids) - online_boards]
         print("The following boards are offline: {}".format(", ".join(offline_boards)) + ". Aborting.")
         exit(3)
