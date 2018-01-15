@@ -313,11 +313,6 @@ def verification_failed(failed_nodes):
     exit(4)
 
 
-def all_boards_online(boards, online_boards):
-    # All IDs which are in set 'boards' must also be in set 'online_boards'
-    return (not (False in [id in online_boards for id in boards]))
-
-
 def enumerate_online_nodes(connection, boards):
     """
     Returns a set containing the online boards.
@@ -347,11 +342,11 @@ def enumerate_online_nodes(connection, boards):
         online_boards.add(src)
         logging.info("Node {} is online.".format(src))
 
-        if all_boards_online(boards, online_boards):
+        if utils.all_boards_online(boards, online_boards):
             # All requested boards have replied
             break
 
-    if not all_boards_online(boards, online_boards):
+    if not utils.all_boards_online(boards, online_boards):
         logging.info("Timeout waiting for response.")
 
     # Return list of boards, which replied
@@ -451,7 +446,7 @@ def main():
     online_boards = enumerate_online_nodes(can_connection, args.ids)
 
     # Make sure, all specified target nodes are online
-    if not all_boards_online(set(args.ids), online_boards):
+    if not utils.all_boards_online(set(args.ids), online_boards):
         offline_boards = [str(i) for i in set(args.ids) - online_boards]
         print("The following boards are offline: {}".format(", ".join(offline_boards)) + ". Aborting.")
         exit(3)

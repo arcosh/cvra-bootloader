@@ -164,6 +164,14 @@ def ping_board(connection, destination):
     return True
 
 
+#
+# Determines whether all IDs in set 'boards'
+# are present in set 'online_boards' or not
+#
+def all_boards_online(boards, online_boards):
+    return (not (False in [id in online_boards for id in boards]))
+
+
 def write_command(connection, command, destinations, source=0):
     """
     Writes the given encoded command to the CAN bridge.
