@@ -112,7 +112,7 @@ def main():
     print("Waiting for bootloader to come online. Press Ctrl+C to cancel...")
 
     # As long as not all requested nodes are online:
-    while utils.all_boards_online(target_nodes, online_nodes):
+    while not utils.all_boards_online(target_nodes, online_nodes):
         # Send ping request to all requested nodes
         utils.write_command(can_connection, commands.encode_ping(), target_nodes)
         sleep(TRANSMISSION_INTERVAL)
