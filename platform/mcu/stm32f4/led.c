@@ -1,9 +1,20 @@
 
 #include <led.h>
 #include <platform.h>
+#include <timeout_timer.h>
 
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
+
+
+#ifdef LED1
+// Must be some high number, so that led_on() at time==0 is possible, see function led_on().
+static uint32_t led1_start_ms = 0xFFFF;
+#endif
+
+#ifdef LED2
+static uint32_t led2_start_ms = 0xFFFF;
+#endif
 
 
 void led_init()
@@ -92,6 +103,50 @@ void led_blink(uint8_t led_index)
             }
             gpio_toggle(GPIO_PORT_LED2, GPIO_PIN_LED2);
         }
+    }
+    #endif
+}
+
+
+void led_on(uint8_t led_index)
+{
+    #ifdef LED1
+    if ((led_index == 1)
+     // Don't restart LED timeout, if LED is already on.
+     && (!gpio_get(GPIO_PORT_LED1, GPIO_PIN_LED1))
+     // Only re-enable LED, if it has been off for a while since last turn-on
+     && ((get_time() - led1_start_ms) >= 2*LED_ON_DURATION_MS))
+    {
+        gpio_set(GPIO_PORT_LED1, GPIO_PIN_LED1);
+        led1_start_ms = get_time();
+    }
+    #endif
+
+    #ifdef LED2
+    if ((led_index == 2)
+     && (!gpio_get(GPIO_PORT_LED2, GPIO_PIN_LED2))
+     && ((get_time() - led2_start_ms) >= 2*LED_ON_DURATION_MS))
+    {
+        gpio_set(GPIO_PORT_LED2, GPIO_PIN_LED2);
+        led2_start_ms = get_time();
+    }
+    #endif
+}
+
+
+void led_process(uint32_t time)
+{
+    #ifdef LED1
+    if ((time - led1_start_ms) >= LED_ON_DURATION_MS)
+    {
+        gpio_clear(GPIO_PORT_LED1, GPIO_PIN_LED1);
+    }
+    #endif
+
+    #ifdef LED2
+    if ((time - led2_start_ms) >= LED_ON_DURATION_MS)
+    {
+        gpio_clear(GPIO_PORT_LED2, GPIO_PIN_LED2);
     }
     #endif
 }
