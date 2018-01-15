@@ -5,7 +5,9 @@
 #include <string.h>
 
 #include <led.h>
+#include <timeout_timer.h>
 
+#include "error.h"
 #include "command.h"
 #include "can_datagram.h"
 #include "config.h"
@@ -23,6 +25,9 @@
 extern command_t commands[COMMAND_COUNT];
 
 
+/**
+ * Send response datagram to bootloader client
+ */
 static void return_datagram(uint8_t source_id, uint8_t dest_id, uint8_t *data, size_t len)
 {
     can_datagram_t dt;
@@ -63,6 +68,33 @@ static void return_datagram(uint8_t source_id, uint8_t dest_id, uint8_t *data, s
 }
 
 
+/**
+ * Send complaint datagram to bootloader client about malformed received datagram
+ */
+static void return_error_datagram(uint8_t source_id, uint8_t* output_buf, uint8_t error_code)
+{
+    cmp_mem_access_t out_cma;
+    cmp_ctx_t out_writer;
+
+    // Prepare output buffer for reponse
+    cmp_mem_access_init(&out_writer, &out_cma, output_buf, OUTPUT_BUFFER_SIZE);
+
+    // Return success (boolean): false
+    cmp_write_uint(&out_writer, error_code);
+
+    // Get size written to output buffer
+    int reply_length = cmp_mem_access_get_pos(&out_cma);
+
+    // Send our reply via CAN
+    return_datagram(
+            source_id & (~ID_START_MASK),
+            0,
+            output_buf,
+            (size_t) reply_length
+            );
+}
+
+
 void bootloader_main(int arg)
 {
     /**
@@ -70,11 +102,11 @@ void bootloader_main(int arg)
      * automatically proceed with starting the app after a timeout
      * or remain listening for commands on the CAN bus forever
      */
-    bool timeout_enabled;
+    volatile bool bootloader_timeout_enabled;
     #ifdef BOOTLOADER_TIMEOUT_DISABLE
-    timeout_enabled = false;
+    bootloader_timeout_enabled = false;
     #else
-    timeout_enabled = !(arg == BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
+    bootloader_timeout_enabled = !(arg == BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
     #endif
 
     if (arg == BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT)
@@ -137,13 +169,14 @@ void bootloader_main(int arg)
      */
     uint8_t reply_length;
     /**
-     * Flag to indicate, whether the previously received datagram was received completely and intact
+     * Switch to enable/disable datagram timeout timer
+     * This timeout is running, as soon as a start frame was received.
      */
-    bool previous_datagram_was_valid = true;
+    bool datagram_timeout_running = false;
 
     can_datagram_init(&dt);
     can_datagram_set_address_buffer(&dt, addr_buf);
-    can_datagram_set_data_buffer(&dt, data_buf, sizeof(data_buf));
+    can_datagram_set_data_buffer(&dt, data_buf, INPUT_BUFFER_SIZE);
     can_datagram_start(&dt);
 
     /**
@@ -153,12 +186,28 @@ void bootloader_main(int arg)
     can_set_filters(config.ID);
 
     /*
+     * Start the timeout timer for the bootloader to jump to the application
+     */
+    bootloader_timeout_start();
+
+    /*
      * Remain in the bootloader until either timeout is reached or a jump
      * to the main application is requested via the appropriate CAN command.
      */
     while (true) {
-        if (timeout_enabled && timeout_reached()) {
+        if (bootloader_timeout_enabled && bootloader_timeout_reached()) {
             command_jump_to_application(0, NULL, NULL, &config);
+        }
+
+        if (datagram_timeout_running && datagram_timeout_reached()) {
+            // Inform client about timeout
+            return_error_datagram(config.ID, output_buf, ERROR_CORRUPT_DATAGRAM);
+            // Begin new empty datagram in order to avoid possible datagram duplication
+            can_datagram_start(&dt);
+            // Stop timeout timer; will be started by next datagram start frame
+            datagram_timeout_running = false;
+
+            led_on(LED_ERROR);
         }
 
         #ifdef BOOTLOADER_SLEEP_UNTIL_INTERRUPT
@@ -179,19 +228,21 @@ void bootloader_main(int arg)
             continue;
         }
 
-        // Begin constructing a new, empty reception datagram
-        if ((id & ID_START_MASK) != 0) {
-            if (previous_datagram_was_valid)
-            {
-                led_blink(LED_SUCCESS);
-            }
-            else
-            {
-                led_blink(LED_ERROR);
-            }
+        if (id != ID_START_MASK
+         && id != 0x000
+         && id != (config.ID | ID_START_MASK)
+         && id != config.ID) {
+            // The frame is not a bootloader broadcast, nor is it addressed to this device's ID.
+            continue;
+        }
 
+        // This frame was for us, so the current datagram didn't time out
+        datagram_timeout_reset();
+
+        // Datagram start frame received: Begin a new, empty reception datagram
+        if ((id & ID_START_MASK) != 0) {
             can_datagram_start(&dt);
-            previous_datagram_was_valid = false;
+            datagram_timeout_running = true;
         }
 
         // Append frame bytes to current reception datagram
@@ -199,26 +250,27 @@ void bootloader_main(int arg)
             can_datagram_input_byte(&dt, data[i]);
         }
 
-        if (can_datagram_is_complete(&dt)) {
+        // Frames with fewer than 8 bytes can only mean end of datagram
+        if (can_datagram_is_complete(&dt)
+         || (data_length < 8)) {
             if (can_datagram_is_valid(&dt)) {
 
-                // Don't flash the red LED upon beginning of next datagram
-                previous_datagram_was_valid = true;
+                // Stop waiting for more frames to this datagram
+                datagram_timeout_running = false;
 
                 // Check, if this nodes's ID is amongst the datagram's target IDs
                 bool addressed = false;
                 int i;
                 for (i = 0; i < dt.destination_nodes_len; i++) {
                     if (dt.destination_nodes[i] == config.ID) {
-                        // Disable bootloader timeout
-                        timeout_enabled = false;
                         addressed = true;
                         break;
                     }
                 }
 
                 if (addressed) {
-                    led_blink(LED_SUCCESS);
+                    // Disable bootloader timeout
+                    bootloader_timeout_enabled = false;
 
                     // we were addressed
                     reply_length = execute_datagram_commands(
@@ -227,7 +279,7 @@ void bootloader_main(int arg)
                             &commands[0],
                             sizeof(commands)/sizeof(command_t),
                             (char*) output_buf,
-                            sizeof(output_buf),
+                            OUTPUT_BUFFER_SIZE,
                             &config
                             );
 
@@ -235,19 +287,42 @@ void bootloader_main(int arg)
                         // The reply's CAN frame ID must not occupy start mask bits.
                         uint8_t return_id = id & ~ID_START_MASK;
 
-                        // Send our reply via CAN
+                        // Send the reply as generated by the corresponding command function
                         return_datagram(
                                 config.ID,
                                 return_id,
                                 output_buf,
                                 (size_t) reply_length
                                 );
+
+                        led_on(LED_SUCCESS);
+
+                    } else {
+                        // A negative return value represents an error code.
+                        return_error_datagram(
+                                config.ID,
+                                output_buf,
+                                (-reply_length)
+                                );
+
+                        led_on(LED_ERROR);
                     }
                 }
+            } else {
+                // The received datagram could not be decoded.
+                return_error_datagram(
+                        config.ID,
+                        output_buf,
+                        ERROR_CORRUPT_DATAGRAM
+                        );
+
+                led_on(LED_ERROR);
             }
 
             // Begin a new datagram, regardsless of whether the current datagram was valid or not
             can_datagram_start(&dt);
+            // Stop timeout timer; will be started by next datagram start frame
+            datagram_timeout_running = false;
         }
     }
 }
