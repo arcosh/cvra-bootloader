@@ -194,6 +194,7 @@ extern "C" {
 #define CAN_RECEIVE_TIMEOUT 10
 #endif
 
+
 // Import symbols from linker script
 extern int application_address, application_size, config_page1, config_page2;
 

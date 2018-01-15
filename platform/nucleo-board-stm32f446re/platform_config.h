@@ -79,6 +79,21 @@
 #define CAN_USE_INTERRUPTS
 
 /**
+ * Configure whether to buffer incoming frames or not
+ */
+#define CAN_RX_BUFFER_ENABLED
+
+/**
+ * A datagram can easily consist of 300 CAN frames and more
+ */
+#define CAN_FRAMES_BUFFERED     500
+
+/**
+ * Only receive frames addressed to this platform's ID
+ */
+#define CAN_FILTERS_ENABLED
+
+/**
  * Many CAN transceivers have an enable input,
  * which needs to be driven HIGH or LOW in order
  * for the transceiver to become operational.

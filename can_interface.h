@@ -8,6 +8,20 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
+
+/**
+ * Initialize bxCAN peripheral according to platform configuration
+ */
+void can_interface_init();
+
+
+/**
+ * Configure CAN peripheral to receive only broadcast frames
+ * and frames addressed specifically to this device
+ */
+void can_set_filters(uint32_t id);
+
+
 /** Reads a message from the CAN interface.
  * @param [out] id A pointer to the variable where the message ID will be stored.
  * @param [out] message A buffer where the CAN message will be stored. Should be large enough to contain 8 bytes.
@@ -17,6 +31,7 @@ extern "C" {
  */
 bool can_interface_read_message(uint32_t *id, uint8_t *message, uint8_t *length, uint32_t retries);
 
+
 /** Sends a message via the CAN interface.
  * @param [in] id The CAN ID to address.
  * @param [in] message The message data.
@@ -25,6 +40,7 @@ bool can_interface_read_message(uint32_t *id, uint8_t *message, uint8_t *length,
  * @returns true if write was successful.
  */
 bool can_interface_send_message(uint32_t id, uint8_t *message, uint8_t length, uint32_t retries);
+
 
 #ifdef __cplusplus
 }

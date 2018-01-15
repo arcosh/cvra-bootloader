@@ -146,6 +146,12 @@ void bootloader_main(int arg)
     can_datagram_set_data_buffer(&dt, data_buf, sizeof(data_buf));
     can_datagram_start(&dt);
 
+    /**
+     * Configure CAN peripheral to receive only broadcast frames
+     * and frames addressed specifically to this device
+     */
+    can_set_filters(config.ID);
+
     /*
      * Remain in the bootloader until either timeout is reached or a jump
      * to the main application is requested via the appropriate CAN command.
