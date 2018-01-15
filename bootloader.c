@@ -77,6 +77,15 @@ void bootloader_main(int arg)
     timeout_enabled = !(arg == BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
     #endif
 
+    if (arg == BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT)
+    {
+        /*
+         * The bootloader was started with the don't-timeout-argument.
+         * In the typical scenario this means the payload application CRC check failed.
+         */
+        led_on(LED_ERROR);
+    }
+
     /**
      * Struct holding the bootloader's configuration
      */

@@ -2,7 +2,6 @@
 #include <crc/crc32.h>
 #include <cmp_mem_access/cmp_mem_access.h>
 #include <platform.h>
-#include <led.h>
 #include "flash_writer.h"
 #include "boot_arg.h"
 #include "config.h"
@@ -154,11 +153,9 @@ void command_jump_to_application(int argc, cmp_ctx_t *args, cmp_ctx_t *out, boot
     // Compare the CRC of the flashed application with the CRC stored in the config
     if (crc32(0, memory_get_app_addr(), config->application_size) == config->application_crc) {
         // CRC is valid: run application
-        led_blink(LED_SUCCESS);
         reboot_system(BOOT_ARG_START_APPLICATION);
     } else {
         // CRC is invalid: reboot and remain in bootloader
-        led_blink(LED_ERROR);
         reboot_system(BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
     }
 #else

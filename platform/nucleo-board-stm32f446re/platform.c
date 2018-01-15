@@ -253,12 +253,16 @@ void platform_main(int arg)
     // Initialize the on-board LED(s)
     led_init();
 
-    // Blink on-board LED to indicate platform startup
-    led_blink(LED_SUCCESS);
+    // Configure timeout according to platform-specific define (assuming 36 Mhz system clock, see above)
+    timer_init(36000000, BOOTLOADER_TIMEOUT, DATAGRAM_TIMEOUT);
 
-    // Configure timeout of 10000 milliseconds (assuming 36 Mhz system clock, see above)
-    timeout_timer_init(36000000, BOOTLOADER_TIMEOUT);
+    // Blink on-board LED to indicate platform startup (must be after timer_init())
+    led_on(LED_SUCCESS);
+
+    // Configure and enable CAN peripheral
     can_interface_init();
+
+    // Start bootloader program
     bootloader_main(arg);
 
     // We only arrive here, if something went wrong. Upon next reboot directly boot into the bootloader.
