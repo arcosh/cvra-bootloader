@@ -58,6 +58,9 @@ extern "C" {
 #define GPIO_PIN_LED1   GPIO5
 #endif
 
+#ifndef LED_ON_DURATION_MS
+#define LED_ON_DURATION_MS  50
+#endif
 
 /**
  * Configure which CAN peripheral to use
