@@ -6,11 +6,9 @@ from sys import exit
 
 try:
     from .PCAN_Basic.Include.PCANBasic import *
+    pcanbasic_library_found = True
 except ImportError:
-    can.logging.critical("Unable to load PCANBasic library.")
-    exit(1)
-
-
+    pcanbasic_library_found = False
 
 
 class PeakPCANInterface:
@@ -19,6 +17,10 @@ class PeakPCANInterface:
     """
 
     def __init__(self):
+        if not pcanbasic_library_found:
+            can.logging.critical("Unable to load PCANBasic library.")
+            exit(1)
+
         self.pcan = PCANBasic()
         self.channel = PCAN_USBBUS1
         baudrate = PCAN_BAUD_1M
