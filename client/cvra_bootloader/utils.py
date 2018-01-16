@@ -98,7 +98,7 @@ def open_connection(args):
             return SocketCANInterface(args.can_interface)
     elif args.serial_device:
         logging.info("Selected SLCAN interface.")
-        return SLCANInterface(args.serial_device)
+        return SLCANInterface(args)
 
 
 def read_can_datagrams(connection):

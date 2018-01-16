@@ -20,7 +20,8 @@ class SLCANInterface:
 
     MIN_MSG_LEN = len('t1230')
 
-    def __init__(self, port):
+    def __init__(self, args):
+        port = args.serial_device
         try:
             self.port = serial.Serial(port=port, timeout=1)
         except FileNotFoundError:
@@ -66,8 +67,12 @@ class SLCANInterface:
         t.start()
 
         # Configure adapter
-        self.send_command('S8');    # bitrate 1Mbit
-        self.send_command('O');    # open device
+        self.send_command("S8");    # Set the bitrate to 1 Mbit
+        self.send_command("O");    # Open the channel
+        # TODO: Generate filter ID and mask from args.id
+        if len(args.ids) == 1 and args.ids[0] == 1:
+            self.send_command("Mffffff81");    # Set filter ID
+            self.send_command("mffffff7f");    # Set filter mask
         self.port.reset_input_buffer()
 
     def spin(self):
