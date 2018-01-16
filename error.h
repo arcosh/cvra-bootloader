@@ -18,6 +18,11 @@ enum error_codes {
      */
     ERROR_CORRUPT_DATAGRAM = 2,
 
+    /**
+     * When a timeout occured waiting for further datagram frames
+     */
+    ERROR_DATAGRAM_TIMEOUT = 6,
+
     /** Invalid command format.
      *
      * Means that the command format is invalid, for example if the command index

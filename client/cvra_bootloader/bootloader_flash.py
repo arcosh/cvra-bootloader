@@ -139,6 +139,9 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                     elif code == Error.CORRUPT_DATAGRAM:
                         error = "datagram error; please resend"
                         retry = True
+                    elif code == Error.DATAGRAM_TIMEOUT:
+                        error = "datagram timed out; please resend"
+                        retry = True
                     elif code == Error.FLASH_ERASE_ERROR_BEFORE_APP:
                         error = "illegal attempt to erase before app section"
                     elif code == Error.FLASH_ERASE_ERROR_AFTER_APP:
@@ -208,6 +211,9 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                         error = "unspecified error"
                     elif code == Error.CORRUPT_DATAGRAM:
                         error = "datagram error; please resend"
+                        retry = True
+                    elif code == Error.DATAGRAM_TIMEOUT:
+                        error = "datagram timed out; please resend"
                         retry = True
                     elif code == Error.FLASH_WRITE_ERROR_BEFORE_APP:
                         error = "illegal attempt to write before app section"

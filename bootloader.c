@@ -201,7 +201,7 @@ void bootloader_main(int arg)
 
         if (datagram_timeout_running && datagram_timeout_reached()) {
             // Inform client about timeout
-            return_error_datagram(config.ID, output_buf, ERROR_CORRUPT_DATAGRAM);
+            return_error_datagram(config.ID, output_buf, ERROR_DATAGRAM_TIMEOUT);
             // Begin new empty datagram in order to avoid possible datagram duplication
             can_datagram_start(&dt);
             // Stop timeout timer; will be started by next datagram start frame
