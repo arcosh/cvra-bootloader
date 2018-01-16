@@ -38,10 +38,15 @@
 #define OUTPUT_BUFFER_SIZE      8192
 
 /**
- * Number of microseconds to wait for a datagram to complete
+ * Number of milliseconds to wait for a datagram to complete
  * before sending an error reply
  */
 #define DATAGRAM_TIMEOUT        1000
+
+/**
+ * Number of milliseconds to wait between CAN frame transmissions
+ */
+#define CAN_INTER_FRAME_DELAY   5
 
 /**
  * Boots the application image (upon bootloader timeout or CAN command)
@@ -52,6 +57,9 @@
 /**
  * Conserve energy by putting the processor to sleep
  * while waiting for interrupts (CAN or timer)
+ *
+ * This switch may interfer with timing, see also
+ *  https://electronics.stackexchange.com/questions/186409/wfi-instruction-slowing-down-systick-interrupt
  */
 //#define BOOTLOADER_SLEEP_UNTIL_INTERRUPT
 

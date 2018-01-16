@@ -53,6 +53,17 @@ static void return_datagram(uint8_t source_id, uint8_t dest_id, uint8_t *data, s
             break;
         }
 
+        #ifdef CAN_INTER_FRAME_DELAY
+        // Artificial delay allowing slow communication partners to keep up
+        uint32_t start = get_time();
+        while ((get_time() - start) < CAN_INTER_FRAME_DELAY)
+        {
+            #ifdef BOOTLOADER_SLEEP_UNTIL_INTERRUPT
+            asm("wfi");
+            #endif
+        }
+        #endif
+
         if (start_of_datagram) {
             if (!can_interface_send_message(source_id | ID_START_MASK, buf, dlc,
                                             CAN_SEND_RETRIES)) {
