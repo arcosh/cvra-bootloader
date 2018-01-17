@@ -128,6 +128,7 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                     print("")
 
                 # Print error code for all failed boards
+                fatal = False
                 for id, status in res.items():
                     code = msgpack.unpackb(status)
                     # Success
@@ -144,14 +145,21 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                         retry = True
                     elif code == Error.FLASH_ERASE_ERROR_BEFORE_APP:
                         error = "illegal attempt to erase before app section"
+                        fatal = True
                     elif code == Error.FLASH_ERASE_ERROR_AFTER_APP:
                         error = "illegal attempt to erase after app section"
+                        fatal = True
                     elif code == Error.FLASH_ERASE_ERROR_DEVICE_CLASS_MISMATCH:
                         error = "device class mismatch"
+                        fatal = True
                     else:
                         error = "unrecognized status code"
                     msg = msg + " (" + error + ")"
                     logging.error(msg)
+
+                if fatal:
+                    logging.critical("Exiting due to fatal error.")
+                    exit(1)
 
                 if not retry:
                     # Print list of failed board IDs
@@ -202,6 +210,7 @@ def flash_image(connection, binary, base_address, device_class, destinations,
 
             if failed_boards:
                 # Print all received error codes
+                fatal = False
                 for id, status in res.items():
                     code = msgpack.unpackb(status)
                     if code == Error.SUCCESS:
@@ -217,18 +226,26 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                         retry = True
                     elif code == Error.FLASH_WRITE_ERROR_BEFORE_APP:
                         error = "illegal attempt to write before app section"
+                        fatal = True
                     elif code == Error.FLASH_WRITE_ERROR_AFTER_APP:
                         error = "illegal attempt to write after app section"
+                        fatal = True
                     elif code == Error.FLASH_WRITE_ERROR_DEVICE_CLASS_MISMATCH:
                         error = "device class mismatch"
+                        fatal = True
                     elif code == Error.FLASH_WRITE_ERROR_UNKNOWN_SIZE:
                         error = "image size not specified"
                     elif code == Error.FLASH_WRITE_ERROR_NOT_ERASED:
                         error = "target flash area not erased properly"
+                        fatal = True
                     else:
                         error = "unrecognized status code"
                     msg = msg + " (" + error + ")"
                     logging.error(msg)
+
+                if fatal:
+                    logging.critical("Exiting due to fatal error.")
+                    exit(1)
 
                 if not retry:
                     # Print list of failed boards
