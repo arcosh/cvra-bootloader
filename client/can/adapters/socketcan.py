@@ -21,6 +21,14 @@ class SocketCANInterface:
         """
         Initiates a CAN connection on the given interface (e.g. 'can0').
         """
+
+        try:
+            from socket import AF_CAN
+        except:
+            # AF_CAN is not available on Windows.
+            can.logging.critical("It appears, your machine doesn't support SocketCAN.")
+            exit(1)
+
         # Creates a raw CAN connection and binds it to the given interface.
         self.socket = socket.socket(socket.AF_CAN,
                                     socket.SOCK_RAW,
