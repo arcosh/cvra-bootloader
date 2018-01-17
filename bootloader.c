@@ -213,6 +213,7 @@ void bootloader_main(int arg)
         if (datagram_timeout_running && datagram_timeout_reached()) {
             // Inform client about timeout
             return_error_datagram(config.ID, output_buf, ERROR_DATAGRAM_TIMEOUT);
+            set_status(ERROR_DATAGRAM_TIMEOUT);
             // Begin new empty datagram in order to avoid possible datagram duplication
             can_datagram_start(&dt);
             // Stop timeout timer; will be started by next datagram start frame
@@ -254,6 +255,7 @@ void bootloader_main(int arg)
         if ((id & ID_START_MASK) != 0) {
             can_datagram_start(&dt);
             datagram_timeout_running = true;
+            set_status(ERROR_UNSPECIFIED);
         }
 
         // Append frame bytes to current reception datagram
@@ -268,6 +270,7 @@ void bootloader_main(int arg)
 
                 // Stop waiting for more frames to this datagram
                 datagram_timeout_running = false;
+                set_status(SUCCESS);
 
                 // Check, if this nodes's ID is amongst the datagram's target IDs
                 bool addressed = false;
@@ -305,7 +308,7 @@ void bootloader_main(int arg)
                                 output_buf,
                                 (size_t) reply_length
                                 );
-
+                        set_status(SUCCESS);
                         led_on(LED_SUCCESS);
 
                     } else {
@@ -315,7 +318,7 @@ void bootloader_main(int arg)
                                 output_buf,
                                 (-reply_length)
                                 );
-
+                        set_status(-reply_length);
                         led_on(LED_ERROR);
                     }
                 }
@@ -326,7 +329,7 @@ void bootloader_main(int arg)
                         output_buf,
                         ERROR_CORRUPT_DATAGRAM
                         );
-
+                set_status(ERROR_CORRUPT_DATAGRAM);
                 led_on(LED_ERROR);
             }
 

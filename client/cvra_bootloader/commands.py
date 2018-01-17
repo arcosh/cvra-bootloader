@@ -1,6 +1,6 @@
 from msgpack import Packer
 
-COMMAND_SET_VERSION = 2
+COMMAND_SET_VERSION = 3
 
 class CommandType:
     JumpToMain = 1
@@ -12,6 +12,7 @@ class CommandType:
     UpdateConfig = 7
     SaveConfig = 8
     ReadConfig = 9
+    GetStatus = 10
 
 def encode_command(command_code, *arguments):
     """
@@ -75,3 +76,9 @@ def encode_ping():
     Encodes a ping command.
     """
     return encode_command(CommandType.Ping)
+
+def encode_get_status():
+    """
+    Encodes a get status command.
+    """
+    return encode_command(CommandType.GetStatus)

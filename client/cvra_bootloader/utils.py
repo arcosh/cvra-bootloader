@@ -164,6 +164,35 @@ def ping_board(connection, destination):
     return True
 
 
+def get_status(connection, destination):
+    """
+    With the get status command, the client can avoid running
+    into timeout while waiting for a bootloader node to respond
+    in a scenario where the bootloader has actually already sent it's response,
+    but it wasn't received on the client.
+    Upon such timeouts, the client might otherwise resend
+    the original datagram and thereby trigger e.g. undesirable flash re-writes.
+
+    Returns the destination node's last response code or None
+    """
+    logging.info("Requesting status code from node " + str(destination) + "...")
+    write_command(connection, commands.get_status(), [destination])
+
+    reader = read_can_datagrams(connection, [destination])
+    answer = next(reader)
+
+    # Timeout
+    if answer is None:
+        logging.warn("Status code request to node " + str(destination) + " timed out.")
+        return None
+
+    # Response
+    data, _, src = answer
+    code = msgpack.unpackb(data)
+    logging.info("Status code on node " + str(destination) + " is " + str(code) + ".")
+    return data, code
+
+
 #
 # Determines whether all IDs in set 'boards'
 # are present in set 'online_boards' or not
@@ -212,25 +241,38 @@ def write_command_retry(connection, command, destinations, source=0, retry_limit
             msg = "Did not receive a valid response datagram from the following targets: {}".format(", ".join(str(t) for t in timedout_boards))
             logging.warning(msg)
 
-            if retry_forever:
-                logging.info("Retrying transmission (attempt " + str(retry_count + 2) + ")...")
-            else:
-                # Retry limit reached?
-                if retry_count >= retry_limit:
-                    if error_exit:
-                        logging.critical("No reply and retry limit reached. Aborting.")
-                        exit(1)
-                    else:
-                        logging.error("No reply and retry limit reached. Skipping.")
-                        return answers
+            # Ask timed-out boards again for their status
+#            for id in timedout_boards:
+#                data, code = get_status(connection, id)
+#                if code is None:
+#                    continue
+#                if code == Error.SUCCESS:
+#                    # The datagram was actually received properly. Don't resend to this destination.
+#                    answers[id] = data
 
-                # Retry
+            # Re-calculate list of get_status() invokations
+#            timedout_boards = list(set(destinations) - set(answers))
+
+            if len(timedout_boards) > 0:
+                if retry_forever:
+                    logging.info("Retrying transmission (attempt " + str(retry_count + 2) + ")...")
+                else:
+                    # Retry limit reached?
+                    if retry_count >= retry_limit:
+                        if error_exit:
+                            logging.critical("No reply and retry limit reached. Aborting.")
+                            exit(1)
+                        else:
+                            logging.error("No reply and retry limit reached. Skipping.")
+                            return answers
+
+                # Resend the command datagram
                 if RETRY_DELAY > 0.0:
                     sleep(RETRY_DELAY)
                 logging.info("Retrying transmission (attempt " + str(retry_count + 2) + "/" + str(1 + retry_limit) + ")...")
+                write_command(connection, command, timedout_boards, source)
+                retry_count += 1
 
-            write_command(connection, command, timedout_boards, source)
-            retry_count += 1
             continue
 
         data, _, src = dt

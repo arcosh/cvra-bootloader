@@ -11,10 +11,10 @@ extern "C" {
 
 
 /** Version of the protocol command set. */
-#define COMMAND_SET_VERSION 2
+#define COMMAND_SET_VERSION 3
 
 /** Total number of supported commands */
-#define COMMAND_COUNT 9
+#define COMMAND_COUNT 10
 
 
 /**
@@ -104,6 +104,14 @@ void command_config_read(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_c
 
 /** Ping command. Simply replies with true. */
 void command_ping(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config);
+
+
+/** Allows to set the current status code */
+void set_status(uint8_t code);
+
+
+/** Command requesting last status code */
+void command_get_status(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config);
 
 
 #ifdef __cplusplus

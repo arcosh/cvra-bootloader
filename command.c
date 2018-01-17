@@ -26,7 +26,8 @@ command_t commands[COMMAND_COUNT] = {
     {.index = 6, .callback = command_read_flash},
     {.index = 7, .callback = command_config_update},
     {.index = 8, .callback = command_config_write_to_flash},
-    {.index = 9, .callback = command_config_read}
+    {.index = 9, .callback = command_config_read},
+    {.index = 10, .callback = command_get_status},
 };
 
 
@@ -356,4 +357,17 @@ int execute_datagram_commands(char *data, size_t data_len, const command_t *comm
         return cmp_mem_access_get_pos(&out_cma);
     }
     return -ERR_COMMAND_NOT_FOUND;
+}
+
+
+static volatile uint8_t status;
+
+void set_status(uint8_t code)
+{
+    status = code;
+}
+
+void command_get_status(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_config_t *config)
+{
+    cmp_write_u8(out, status);
 }
