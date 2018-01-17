@@ -15,7 +15,7 @@
 //#define PLATFORM_ENABLE_UUID
 
 /**
- * Number of microseconds to remain in the bootloader
+ * Number of milliseconds to remain in the bootloader
  * waiting for a CAN frame before booting to the payload application
  */
 #define BOOTLOADER_TIMEOUT      4000
@@ -41,12 +41,12 @@
  * Number of milliseconds to wait for a datagram to complete
  * before sending an error reply
  */
-#define DATAGRAM_TIMEOUT        1000
+#define DATAGRAM_TIMEOUT        500
 
 /**
  * Number of milliseconds to wait between CAN frame transmissions
  */
-#define CAN_INTER_FRAME_DELAY   5
+#define CAN_INTER_FRAME_DELAY   1
 
 /**
  * Boots the application image (upon bootloader timeout or CAN command)
@@ -67,10 +67,8 @@
 /**
  * Configure onboard LEDs
  */
-#define LED1                // Use LED1 with default pin configuration
-//#define LED2                // Enable and configure a second LED
-//#define GPIO_PORT_LED2  GPIOC
-//#define GPIO_PIN_LED2   GPIO5
+// Use LED1 with default pin configuration
+#define LED1
 
 
 /**

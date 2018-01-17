@@ -138,10 +138,11 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                     if code == Error.UNSPECIFIED_ERROR:
                         error = "unspecified error"
                     elif code == Error.CORRUPT_DATAGRAM:
-                        error = "datagram error; please resend"
+                        error = "datagram error"
+                        # utils.INTER_FRAME_DELAY += 0.001
                         retry = True
                     elif code == Error.DATAGRAM_TIMEOUT:
-                        error = "datagram timed out; please resend"
+                        error = "datagram timed out"
                         retry = True
                     elif code == Error.FLASH_ERASE_ERROR_BEFORE_APP:
                         error = "illegal attempt to erase before app section"
@@ -182,16 +183,12 @@ def flash_image(connection, binary, base_address, device_class, destinations,
         retry = True
         while retry:
             retry = False
-            sleep(0.1)
 
             command = commands.encode_write_flash(chunk,
                                                   base_address + offset,
                                                   device_class)
 
-            # In case no reply is received, the instruction to write to flash should not be repeated,
-            # as this might cause problems on any system that received the first write frame.
-            # Also, it does not need to result in program exit, as the checksum process
-            # will ultimately determine, if the flash write was successful or not.
+            # print("Writing {} bytes to address {}".format(page_size, "0x" + hex(base_address + offset)[2:].zfill(8)))
             res = utils.write_command_retry(connection, command, destinations, retry_limit=0, error_exit=False, retry_forever=True)
 
             failed_boards = [str(id) for id, status in res.items()
@@ -219,10 +216,11 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                     if code == Error.UNSPECIFIED_ERROR:
                         error = "unspecified error"
                     elif code == Error.CORRUPT_DATAGRAM:
-                        error = "datagram error; please resend"
+                        error = "datagram error"
                         retry = True
                     elif code == Error.DATAGRAM_TIMEOUT:
-                        error = "datagram timed out; please resend"
+                        error = "datagram timed out"
+                        # utils.INTER_FRAME_DELAY += 0.001
                         retry = True
                     elif code == Error.FLASH_WRITE_ERROR_BEFORE_APP:
                         error = "illegal attempt to write before app section"

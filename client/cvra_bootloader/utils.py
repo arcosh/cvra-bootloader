@@ -19,7 +19,7 @@ from can.adapters.peak_pcan import PeakPCANInterface
 # This number depends on the performance and buffering capabilities
 # of the used CAN adapter as well as on the amount of other chatter on the CAN bus.
 #
-INTER_FRAME_DELAY = 0.003
+INTER_FRAME_DELAY = 0.001
 
 #
 # Number of seconds to wait before retrying a failed CAN datagram transmission
@@ -101,7 +101,7 @@ def open_connection(args):
         return SLCANInterface(args)
 
 
-def read_can_datagrams(connection):
+def read_can_datagrams(connection, ids=None):
     buf = defaultdict(lambda: bytes())
     while True:
         datagram = None
@@ -122,6 +122,12 @@ def read_can_datagrams(connection):
 
             # Source ID is bits[6:0], see PROTOCOL.markdown
             src = frame.id & (0x7f)
+
+            # Filter node IDs
+            if ids:
+                if not src in ids:
+                    continue
+
             # Datagram start bit set?
             if (len(buf) > 0) and (src in buf.keys()) and (frame.id & 0x080 > 0):
                 # Begin new datagram
@@ -222,11 +228,15 @@ def write_command_retry(connection, command, destinations, source=0, retry_limit
     """
     logging.info("Initiating transmission (attempt 1/" + str(1 + retry_limit) + ")...")
 
-    # Transmit command datagram
-    write_command(connection, command, destinations, source)
-
     # Instantiate a datagram yielder
     reader = read_can_datagrams(connection)
+
+    # Clear reception buffer
+    while not connection.rx_queue.empty():
+        dt = next(reader)
+
+    # Transmit command datagram
+    write_command(connection, command, destinations, source)
 
     answers = dict()
     retry_count = 0
@@ -265,6 +275,10 @@ def write_command_retry(connection, command, destinations, source=0, retry_limit
                         else:
                             logging.error("No reply and retry limit reached. Skipping.")
                             return answers
+
+                # Clear reception buffer
+                while not connection.rx_queue.empty():
+                    dt = next(reader)
 
                 # Resend the command datagram
                 if RETRY_DELAY > 0.0:

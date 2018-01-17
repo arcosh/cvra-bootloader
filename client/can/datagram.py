@@ -90,6 +90,10 @@ def decode_datagram(data):
         return None
 
     can.logging.debug("Datagram successfully decoded.")
+#    s = ""
+#    for b in data:
+#        s += hex(b)[2:].zfill(2) + " "
+#    print(s)
     return data, destinations
 
 def datagram_to_frames(datagram, source):

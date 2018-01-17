@@ -101,12 +101,15 @@ bool can_datagram_is_complete(can_datagram_t *dt)
 
 bool can_datagram_is_valid(can_datagram_t *dt)
 {
-    return can_datagram_compute_crc(dt) == dt->crc && dt->protocol_version == CAN_DATAGRAM_VERSION;
+    return (can_datagram_is_complete(dt))
+        && (can_datagram_compute_crc(dt) == dt->crc)
+        && (dt->protocol_version == CAN_DATAGRAM_VERSION);
 }
 
 void can_datagram_start(can_datagram_t *dt)
 {
     dt->_reader_state = STATE_PROTOCOL_VERSION;
+    dt->crc = 0x11223344;
     dt->_crc_bytes_read = 0;
     dt->_destination_nodes_read = 0;
     dt->_data_length_bytes_read = 0;

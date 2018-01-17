@@ -87,7 +87,8 @@ void rcc_clock_setup_in_hsi_out_36mhz(void)
     rcc_wait_for_osc_ready(PLL);
 
     // Set flash latency
-    flash_set_ws(1);
+//    flash_set_ws(1);
+    flash_set_ws(2);
 
     // Configure AHB prescaler
     rcc_set_hpre(2);
