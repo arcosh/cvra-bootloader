@@ -29,6 +29,12 @@ extern "C" {
 
 
 /**
+ * Number of times, the flash sector erase command
+ * should retry upon errors, before giving up
+ */
+#define FLASH_ERASE_RETRIES         20
+
+/**
  * The STM32F446RE has eight flash sectors,
  * see RM0390 rev.3 on page 64.
  */

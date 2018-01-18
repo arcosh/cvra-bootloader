@@ -254,3 +254,17 @@ void flash_writer_page_write(void *page, void *data, size_t len)
     }
 }
 
+
+bool flash_page_is_erased(uint8_t* address, size_t size)
+{
+    for (uint32_t i=0; i<size; i++)
+    {
+        if (*(address++) != 0xFF)
+        {
+            // Not erased
+            return false;
+        }
+    }
+    // All bytes are 0xFF
+    return true;
+}

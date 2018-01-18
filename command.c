@@ -74,10 +74,20 @@ void command_erase_flash_page(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloa
         return;
     }
 
-    // Erase flash at specified address
-    flash_writer_unlock();
-    flash_writer_page_erase(address);
-    flash_writer_lock();
+    uint8_t retry = FLASH_ERASE_RETRIES;
+    do {
+        // Erase flash at specified address
+        flash_writer_unlock();
+        flash_writer_page_erase(address);
+        flash_writer_lock();
+    }
+    // Check, if the target area was erased completely
+    while ((!flash_page_is_erased(address, size)) && (retry-- > 0));
+
+    if (retry == 0) {
+        // Flash area not erased
+        cmp_write_uint(out, FLASH_ERASE_FAILED);
+    }
 
     // Erasure succeeded
     cmp_write_uint(out, FLASH_ERASE_SUCCESS);
@@ -131,17 +141,11 @@ void command_write_flash(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_c
     cmp_mem_access_t *cma = (cmp_mem_access_t *)(args->buf);
     src = cmp_mem_access_get_ptr_at_pos(cma, cmp_mem_access_get_pos(cma));
 
-    /*
-     * Make sure the target area is erased.
-     * TODO: Verify that the code below is working.
-     */
-    uint8_t* p = address;
-    for (uint32_t i=0; i<size; i++) {
-        if (*(p++) != 0xFF) {
-            // Not erased
-            cmp_write_uint(out, FLASH_WRITE_ERROR_NOT_ERASED);
-            return;
-        }
+    // Make sure the target area is erased.
+    if (!flash_page_is_erased(address, size)) {
+        // Not erased
+        cmp_write_uint(out, FLASH_WRITE_ERROR_NOT_ERASED);
+        return;
     }
 
     // Write received data to flash

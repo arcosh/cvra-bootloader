@@ -1,6 +1,7 @@
 #ifndef FLASH_WRITER_H
 #define FLASH_WRITER_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -40,6 +41,16 @@ void flash_writer_page_erase(void *page);
  * @param len       Number of bytes to write to flash
  */
 void flash_writer_page_write(void *page, void *data, size_t len);
+
+/**
+ * Verifies that the specified flash area contains no data
+ *
+ * @param address   Start address of the flash page to check
+ * @param size      Number of bytes to check at the provided address
+ * @return true     The specified flash page only consists of 0xFF (erased data).
+ * @return false    The specified flash page contains unerased data.
+ */
+bool flash_page_is_erased(uint8_t* address, size_t size);
 
 #ifdef __cplusplus
 }

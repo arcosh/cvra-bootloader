@@ -48,6 +48,7 @@ enum error_codes {
 #define FLASH_ERASE_ERROR_BEFORE_APP                10
 #define FLASH_ERASE_ERROR_AFTER_APP                 11
 #define FLASH_ERASE_ERROR_DEVICE_CLASS_MISMATCH     12
+#define FLASH_ERASE_FAILED                          13
 
 /**
  * Possible reply values for write flash command
