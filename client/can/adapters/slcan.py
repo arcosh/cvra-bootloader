@@ -124,13 +124,26 @@ class SLCANInterface:
 
         if len(msg) < id_len + 1:
             return None
-        can_id = int(msg[0:id_len], 16)
+        try:
+            can_id = int(msg[0:id_len], 16)
+        except:
+            can.logging.warning("Failed to parse ID from incoming SLCAN frame.")
+            return None
         msg = msg[id_len:]
-        data_len = int(msg[0])
+        try:
+            data_len = int(msg[0])
+        except:
+            can.logging.warning("Failed to parse DLC from incoming SLCAN frame.")
+            return None
         msg = msg[1:]
         if len(msg) < 2 * data_len:
+            can.logging.warning("Insufficient data in incoming SLCAN frame.")
             return None
-        data = [int(msg[i:i + 2], 16) for i in range(0, 2 * data_len, 2)]
+        try:
+            data = [int(msg[i:i + 2], 16) for i in range(0, 2 * data_len, 2)]
+        except:
+            can.logging.warning("Failed to parse data bytes from incoming SLCAN frame.")
+            return None
 
         return can.Frame(id=can_id, data=bytearray(data), data_length=data_len, extended=extended)
 
