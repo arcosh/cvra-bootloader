@@ -46,7 +46,7 @@
 /**
  * Number of milliseconds to wait between CAN frame transmissions
  */
-#define CAN_INTER_FRAME_DELAY   1
+#define CAN_INTER_FRAME_DELAY   4
 
 /**
  * Boots the application image (upon bootloader timeout or CAN command)

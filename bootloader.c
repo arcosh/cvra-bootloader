@@ -56,7 +56,7 @@ static void return_datagram(uint8_t source_id, uint8_t dest_id, uint8_t *data, s
         #ifdef CAN_INTER_FRAME_DELAY
         // Artificial delay allowing slow communication partners to keep up
         uint32_t start = get_time();
-        while ((get_time() - start) < CAN_INTER_FRAME_DELAY)
+        while ((get_time() - start) < CAN_INTER_FRAME_DELAY+1)
         {
             #ifdef BOOTLOADER_SLEEP_UNTIL_INTERRUPT
             asm("wfi");
