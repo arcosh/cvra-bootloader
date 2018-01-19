@@ -9,6 +9,13 @@ extern "C" {
 #include <stdbool.h>
 #include <cmp/cmp.h>
 
+#define CONFIG_KEY_ID                   "ID"
+#define CONFIG_KEY_BOARD_NAME           "name"
+#define CONFIG_KEY_DEVICE_CLASS         "device_class"
+#define CONFIG_KEY_APPLICATION_CRC      "application_crc"
+#define CONFIG_KEY_APPLICATION_SIZE     "application_size"
+#define CONFIG_KEY_UPDATE_COUNT         "update_count"
+
 typedef struct {
     uint8_t ID; /**< Node ID */
     char board_name[64 + 1];   /**< Node human readable name, eg: 'arms.left.shoulder'. */

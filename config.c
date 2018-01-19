@@ -49,22 +49,22 @@ void config_write_messagepack(cmp_ctx_t *context, bootloader_config_t *config)
 {
     cmp_write_map(context, 6);
 
-    cmp_write_str(context, "ID", 2);
+    cmp_write_str(context, CONFIG_KEY_ID, sizeof(CONFIG_KEY_ID)-1);
     cmp_write_u8(context, config->ID);
 
-    cmp_write_str(context, "name", 4);
+    cmp_write_str(context, CONFIG_KEY_BOARD_NAME, sizeof(CONFIG_KEY_BOARD_NAME)-1);
     cmp_write_str(context, config->board_name, strlen(config->board_name));
 
-    cmp_write_str(context, "device_class", 12);
+    cmp_write_str(context, CONFIG_KEY_DEVICE_CLASS, sizeof(CONFIG_KEY_DEVICE_CLASS)-1);
     cmp_write_str(context, config->device_class, strlen(config->device_class));
 
-    cmp_write_str(context, "application_crc", 15);
+    cmp_write_str(context, CONFIG_KEY_APPLICATION_CRC, sizeof(CONFIG_KEY_APPLICATION_CRC)-1);
     cmp_write_uint(context, config->application_crc);
 
-    cmp_write_str(context, "application_size", 16);
+    cmp_write_str(context, CONFIG_KEY_APPLICATION_SIZE, sizeof(CONFIG_KEY_APPLICATION_SIZE)-1);
     cmp_write_uint(context, config->application_size);
 
-    cmp_write_str(context, "update_count", 12);
+    cmp_write_str(context, CONFIG_KEY_UPDATE_COUNT, sizeof(CONFIG_KEY_UPDATE_COUNT)-1);
     cmp_write_uint(context, config->update_count);
 }
 
@@ -94,29 +94,29 @@ void config_update_from_serialized(bootloader_config_t *config, cmp_ctx_t *conte
         cmp_read_str(context, key, &key_len);
         key[key_len] = 0;
 
-        if (!strcmp("ID", key)) {
+        if (!strcmp(CONFIG_KEY_ID, key)) {
             cmp_read_uchar(context, &config->ID);
         }
 
-        if (!strcmp("name", key)) {
+        if (!strcmp(CONFIG_KEY_BOARD_NAME, key)) {
             uint32_t name_len = 65;
             cmp_read_str(context, config->board_name, &name_len);
         }
 
-        if (!strcmp("device_class", key)) {
+        if (!strcmp(CONFIG_KEY_DEVICE_CLASS, key)) {
             uint32_t name_len = 65;
             cmp_read_str(context, config->device_class, &name_len);
         }
 
-        if (!strcmp("application_crc", key)) {
+        if (!strcmp(CONFIG_KEY_APPLICATION_CRC, key)) {
             cmp_read_uint(context,  &config->application_crc);
         }
 
-        if (!strcmp("application_size", key)) {
+        if (!strcmp(CONFIG_KEY_APPLICATION_SIZE, key)) {
             cmp_read_uint(context,  &config->application_size);
         }
 
-        if (!strcmp("update_count", key)) {
+        if (!strcmp(CONFIG_KEY_UPDATE_COUNT, key)) {
             cmp_read_uint(context,  &config->update_count);
         }
     }

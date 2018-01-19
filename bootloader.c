@@ -134,11 +134,13 @@ void bootloader_main(int arg)
      */
     bootloader_config_t config;
     if (config_is_valid(memory_get_config1_addr(), CONFIG_PAGE_SIZE)) {
+        // Read configuration from first configuration page
         config = config_read(memory_get_config1_addr(), CONFIG_PAGE_SIZE);
     } else if (config_is_valid(memory_get_config2_addr(), CONFIG_PAGE_SIZE)) {
+        // Read configuration from second configuration page
         config = config_read(memory_get_config2_addr(), CONFIG_PAGE_SIZE);
     } else {
-        // exact behaviour at invalid config is not yet defined.
+        // No valid configuration page found: Create new
         strcpy(config.device_class, PLATFORM_DEVICE_CLASS);
         strcpy(config.board_name, PLATFORM_DEFAULT_NAME);
         config.ID = PLATFORM_DEFAULT_ID;
