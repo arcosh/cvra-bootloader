@@ -19,7 +19,7 @@ from can.adapters.peak_pcan import PeakPCANInterface
 # This number depends on the performance and buffering capabilities
 # of the used CAN adapter as well as on the amount of other chatter on the CAN bus.
 #
-INTER_FRAME_DELAY = 0.001
+INTER_FRAME_DELAY = 0.004
 
 #
 # Number of seconds to wait before retrying a failed CAN datagram transmission
