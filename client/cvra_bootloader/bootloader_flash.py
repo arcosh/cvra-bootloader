@@ -129,6 +129,7 @@ def flash_image(connection, binary, base_address, device_class, destinations,
 
                 # Print error code for all failed boards
                 fatal = False
+                error_message = True
                 for id, status in res.items():
                     code = msgpack.unpackb(status)
                     # Success
@@ -140,6 +141,8 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                     elif code == Error.CORRUPT_DATAGRAM:
                         error = "datagram error"
                         # utils.INTER_FRAME_DELAY += 0.001
+                        if not args.verbose:
+                            error_message = False
                         retry = True
                     elif code == Error.DATAGRAM_TIMEOUT:
                         error = "datagram timed out"
@@ -155,8 +158,10 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                         fatal = True
                     else:
                         error = "unrecognized status code"
-                    msg = msg + " (" + error + ")"
-                    logging.error(msg)
+
+                    if error_message:
+                        msg = msg + " (" + error + ")"
+                        logging.error(msg)
 
                 if fatal:
                     logging.critical("Exiting due to fatal error.")
@@ -208,6 +213,7 @@ def flash_image(connection, binary, base_address, device_class, destinations,
             if failed_boards:
                 # Print all received error codes
                 fatal = False
+                error_message = True
                 for id, status in res.items():
                     code = msgpack.unpackb(status)
                     if code == Error.SUCCESS:
@@ -217,6 +223,8 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                         error = "unspecified error"
                     elif code == Error.CORRUPT_DATAGRAM:
                         error = "datagram error"
+                        if not args.verbose:
+                            error_message = False
                         retry = True
                     elif code == Error.DATAGRAM_TIMEOUT:
                         error = "datagram timed out"
@@ -238,8 +246,10 @@ def flash_image(connection, binary, base_address, device_class, destinations,
                         fatal = True
                     else:
                         error = "unrecognized status code"
-                    msg = msg + " (" + error + ")"
-                    logging.error(msg)
+
+                    if error_message:
+                        msg = msg + " (" + error + ")"
+                        logging.error(msg)
 
                 if fatal:
                     logging.critical("Exiting due to fatal error.")
