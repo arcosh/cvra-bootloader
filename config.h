@@ -12,9 +12,16 @@ extern "C" {
 #define CONFIG_KEY_ID                   "ID"
 #define CONFIG_KEY_BOARD_NAME           "name"
 #define CONFIG_KEY_DEVICE_CLASS         "device_class"
+#ifdef CONFIG_APPLICATION_AS_STRUCT
+#define CONFIG_KEY_APPLICATION          "application"
+#define CONFIG_KEY_APPLICATION_CRC      "crc"
+#define CONFIG_KEY_APPLICATION_SIZE     "size"
+#else
 #define CONFIG_KEY_APPLICATION_CRC      "application_crc"
 #define CONFIG_KEY_APPLICATION_SIZE     "application_size"
+#endif
 #define CONFIG_KEY_UPDATE_COUNT         "update_count"
+
 
 typedef struct {
     uint8_t ID; /**< Node ID */

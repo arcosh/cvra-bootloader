@@ -108,6 +108,13 @@ void config_update_from_serialized(bootloader_config_t *config, cmp_ctx_t *conte
             cmp_read_str(context, config->device_class, &name_len);
         }
 
+#ifdef CONFIG_APPLICATION_AS_STRUCT
+        if (!strcmp(CONFIG_KEY_APPLICATION, key)) {
+
+            // TODO: Parse as struct
+
+        }
+#else
         if (!strcmp(CONFIG_KEY_APPLICATION_CRC, key)) {
             cmp_read_uint(context,  &config->application_crc);
         }
@@ -115,6 +122,7 @@ void config_update_from_serialized(bootloader_config_t *config, cmp_ctx_t *conte
         if (!strcmp(CONFIG_KEY_APPLICATION_SIZE, key)) {
             cmp_read_uint(context,  &config->application_size);
         }
+#endif
 
         if (!strcmp(CONFIG_KEY_UPDATE_COUNT, key)) {
             cmp_read_uint(context,  &config->update_count);
