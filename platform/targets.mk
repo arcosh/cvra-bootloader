@@ -21,6 +21,24 @@ clean:
 .PHONY: rebuild
 rebuild: clean all
 
+
+# Copy built ELF for archiving purposes
+ELF_COPY_NAME := $(PROJNAME)
+
+# Append build date to filename
+# TODO: The date command doesn't work when compiling on Windows machines.
+ifneq ($(OS),Windows_NT)
+ELF_COPY_NAME := $(ELF_COPY_NAME)-$(shell date +%Y-%m-%d)
+endif
+
+# Append commit hash to filename
+ELF_COPY_NAME := $(ELF_COPY_NAME)-$(shell git rev-parse --short HEAD)
+
+# Check for uncommitted changes in working directory
+ifneq ($(shell git status --porcelain),)
+ELF_COPY_NAME := $(ELF_COPY_NAME)+changes
+endif
+
 #
 # file targets:
 ################################################################################
@@ -29,6 +47,7 @@ rebuild: clean all
 $(PROJNAME).elf: $(OBJS) $(LDSCRIPT)
 	$(PRINT) "> linking"
 	$(Q) $(LD) -o $(PROJNAME).elf $(OBJS) $(LFLAGS)
+	@cp $(PROJNAME).elf $(ELF_COPY_NAME).elf
 
 # binary
 $(PROJNAME).bin: $(PROJNAME).elf
