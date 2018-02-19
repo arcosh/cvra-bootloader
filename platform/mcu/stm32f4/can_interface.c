@@ -53,28 +53,38 @@ void can_interface_init()
     rcc_periph_clock_enable(RCC_CAN2);
     #endif
 
-    // Setup CAN pins
+    /*
+     * Setup CAN pins
+     *
+     * CAVEAT:
+     * The alternate function block must be configured
+     * (using gpio_set_af)
+     * before setting the GPIO to AF
+     * (using gpio_mode_setup),
+     * otherwise the GPIO pin will toggle and
+     * thus emit erroneous CAN frames to the bus.
+     */
+    gpio_set_af(
+            GPIO_PORT_CAN_TX,
+            GPIO_AF_CAN,
+            GPIO_PIN_CAN_TX
+            );
     gpio_mode_setup(
             GPIO_PORT_CAN_TX,
             GPIO_MODE_AF,
             GPIO_PUPD_PULLUP,
-            GPIO_PIN_CAN_TX
-            );
-    gpio_set_af(
-            GPIO_PORT_CAN_TX,
-            GPIO_AF_CAN,
             GPIO_PIN_CAN_TX
             );
 
+    gpio_set_af(
+            GPIO_PORT_CAN_RX,
+            GPIO_AF_CAN,
+            GPIO_PIN_CAN_RX
+            );
     gpio_mode_setup(
             GPIO_PORT_CAN_RX,
             GPIO_MODE_AF,
             GPIO_PUPD_PULLUP,
-            GPIO_PIN_CAN_RX
-            );
-    gpio_set_af(
-            GPIO_PORT_CAN_RX,
-            GPIO_AF_CAN,
             GPIO_PIN_CAN_RX
             );
 
