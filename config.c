@@ -2,6 +2,7 @@
 #include <cmp_mem_access/cmp_mem_access.h>
 #include <crc/crc32.h>
 #include "config.h"
+#include "platform.h"
 
 static inline uint32_t config_calculate_crc(void *page, size_t page_size)
 {
@@ -21,10 +22,12 @@ static inline uint32_t config_read_crc(void *page)
 
 bool config_is_valid(void *page, size_t page_size)
 {
+#ifndef ADDRESS_BOUNDARY_CHECK_DISABLED
     // Make sure, the given address lies within the flash memory boundaries
     extern uint32_t flash_begin, flash_end;
     if ((uint32_t) page < (uint32_t) (&flash_begin) || (uint32_t) page > (uint32_t) (&flash_end))
         return false;
+#endif
 
     return (config_read_crc(page) == config_calculate_crc(page, page_size));
 }

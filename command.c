@@ -216,6 +216,7 @@ void command_crc_region(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_co
         return;
     }
 
+#ifndef ADDRESS_BOUNDARY_CHECK_DISABLED
     // Import flash boundaries from linker script
     extern uint32_t flash_begin;
     extern uint32_t flash_end;
@@ -230,6 +231,7 @@ void command_crc_region(int argc, cmp_ctx_t *args, cmp_ctx_t *out, bootloader_co
         cmp_write_uint(out, CRC_ERROR_ILLEGAL_ADDRESS);
         return;
     }
+#endif
 
     // Calculate checksum over the requested address range
     crc = crc32(0, address, size);
