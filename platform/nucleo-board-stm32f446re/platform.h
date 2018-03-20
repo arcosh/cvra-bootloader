@@ -85,11 +85,11 @@ extern "C" {
 #endif
 
 #ifndef CAN_TS1
-#define CAN_TS1         CAN_BTR_TS1_16TQ
+#define CAN_TS1         CAN_BTR_TS1_15TQ
 #endif
 
 #ifndef CAN_TS2
-#define CAN_TS2         CAN_BTR_TS2_1TQ
+#define CAN_TS2         CAN_BTR_TS2_2TQ
 #endif
 
 /**
