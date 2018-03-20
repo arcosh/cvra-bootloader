@@ -20,8 +20,26 @@
 #endif
 
 
-void rcc_clock_setup_in_hsi_out_36mhz(void);
+/**
+ * Configure the processor to run from the internal resonator
+ */
+void rcc_clock_setup_in_hsi_out_36mhz();
 
-void rcc_clock_setup_in_hse_25mhz_out_36mhz(void);
+/**
+ * Configure clock to run from external 25 MHz quartz
+ */
+void rcc_clock_setup_in_hse_25mhz_out_36mhz();
+
+
+/**
+ * Configure pin PC9 as master clock output 2
+ */
+void rcc_set_pc9_mco2();
+
+void rcc_mco2_output_pll();
+
+void rcc_mco2_output_sysclock();
+
+void rcc_mco2_output_quartz();
 
 #endif

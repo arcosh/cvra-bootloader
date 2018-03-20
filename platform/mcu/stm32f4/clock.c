@@ -63,14 +63,8 @@ void rcc_set_pc9_mco2()
 }
 
 
-/**
- * Configure the processor to run at 36MHz from the internal resonator
- */
 void rcc_clock_setup_in_hsi_out_36mhz(void)
 {
-//    rcc_set_mco2_pll();
-    rcc_set_pc9_mco2();
-
     // Enable internal high-speed resonator (16 MHz)
     rcc_osc_on(HSI);
     // Wait for internal resonator to become ready
@@ -85,7 +79,7 @@ void rcc_clock_setup_in_hsi_out_36mhz(void)
     // Configure PLL source multiplexer to use internal resonator (HSI)
     rcc_set_pll_source(RCC_PLLCFGR_PLLSRC_HSI);
     // Configure PLL to scale input to 72 MHz:
-    // HSI=16 MHz / M=8 * N=72 / P=2 = 36 MHz, Q and R are irrelevant
+    // HSI=16 MHz / M=8 * N=72 / P=2 / AHB=2 = 36 MHz, Q and R are irrelevant
     rcc_set_main_pll_hsi(8, 72, 2, 2);
     // Re-enable PLL
     rcc_osc_on(PLL);
@@ -108,9 +102,6 @@ void rcc_clock_setup_in_hsi_out_36mhz(void)
 }
 
 
-/**
- * Configure clock to run from external 25 MHz quartz
- */
 void rcc_clock_setup_in_hse_25mhz_out_36mhz(void)
 {
     /*
@@ -119,11 +110,17 @@ void rcc_clock_setup_in_hse_25mhz_out_36mhz(void)
      * PLLP = 2
      * PLLQ = doesn't matter
      * PLLR = doesn't matter
+     *
+     * f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+     * f(PLL clock output) = f(VCO clock) / PLLP
+     *
+     * 2 ≤ PLLM ≤ 63
+     * 50 ≤ PLLN ≤ 432
+     * PLLP = 2, 4, 6 or 8
      */
     const uint8_t pllm = 25;
     const uint8_t plln = 144;
-    // TODO: Why does it work with P=20, but not with P=2?
-    const uint8_t pllp = 20;
+    const uint8_t pllp = 4;
     const uint8_t pllq = 2;
 
     /*
@@ -166,6 +163,7 @@ void rcc_clock_setup_in_hse_25mhz_out_36mhz(void)
      * Set the bus prescalers
      *
      * AHB prescaler = 2
+     * => CAN peripheral running @ 18 MHz
      * APB1 prescaler = 1
      * APB2 prescaler = 1
      */
@@ -173,16 +171,12 @@ void rcc_clock_setup_in_hse_25mhz_out_36mhz(void)
     rcc_set_ppre1(RCC_CFGR_PPRE_DIV_NONE);
     rcc_set_ppre2(RCC_CFGR_PPRE_DIV_NONE);
 
-//    rcc_set_hpre(1 << 2);
-//    rcc_set_ppre1(0);
-//    rcc_set_ppre2(0);
-
     /*
      * Save the configured clock frequencies
      */
-//    rcc_ahb_frequency = 36000000;
-//    rcc_apb1_frequency = 36000000;
-//    rcc_apb2_frequency = 36000000;
+    rcc_ahb_frequency = 18000000;
+    rcc_apb1_frequency = 36000000;
+    rcc_apb2_frequency = 36000000;
 
     /*
      * Adjust flash writer wait states
@@ -191,7 +185,7 @@ void rcc_clock_setup_in_hse_25mhz_out_36mhz(void)
      * 1WS from 24-48MHz
      * 2WS from 48-72MHz
      */
-    flash_set_ws(FLASH_ACR_LATENCY_2WS);
+    flash_set_ws(FLASH_ACR_LATENCY_1WS);
 
     /*
      * Select PLL as SYSCLK source
