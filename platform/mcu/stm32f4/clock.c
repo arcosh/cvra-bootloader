@@ -33,16 +33,31 @@ void rcc_wait_for_osc_not_ready(enum rcc_osc osc)
 }
 
 
-void rcc_set_mco2_pll()
+void rcc_mco2_output_pll()
 {
     uint32_t tmp = RCC_CFGR & ~(RCC_CFGR_MCO2_MASK << RCC_CFGR_MCO2_SHIFT);
     RCC_CFGR = tmp | (RCC_CFGR_MCO2_PLL << RCC_CFGR_MCO2_SHIFT);
 }
 
 
+void rcc_mco2_output_sysclock()
+{
+    uint32_t tmp = RCC_CFGR & ~(RCC_CFGR_MCO2_MASK << RCC_CFGR_MCO2_SHIFT);
+    RCC_CFGR = tmp | (RCC_CFGR_MCO2_SYSCLK << RCC_CFGR_MCO2_SHIFT);
+}
+
+
+void rcc_mco2_output_quartz()
+{
+    uint32_t tmp = RCC_CFGR & ~(RCC_CFGR_MCO2_MASK << RCC_CFGR_MCO2_SHIFT);
+    RCC_CFGR = tmp | (RCC_CFGR_MCO2_HSE << RCC_CFGR_MCO2_SHIFT);
+}
+
+
 void rcc_set_pc9_mco2()
 {
-    gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO9);
+    rcc_periph_clock_enable(RCC_GPIOC);
+    gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9);
     gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, GPIO9);
     gpio_set_af(GPIOC, GPIO_AF0, GPIO9);
 }
