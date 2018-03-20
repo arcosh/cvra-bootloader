@@ -69,11 +69,27 @@ extern "C" {
 #endif
 
 /**
- * Configure which CAN peripheral to use
+ * CAN peripheral default configuration
  */
 #if (!defined(USE_CAN1)) && (!defined(USE_CAN2))
 //#define USE_CAN1
 #define USE_CAN2
+#endif
+
+#ifndef CAN_PRESCALER
+#define CAN_PRESCALER   1
+#endif
+
+#ifndef CAN_SJW
+#define CAN_SJW         CAN_BTR_SJW_1TQ
+#endif
+
+#ifndef CAN_TS1
+#define CAN_TS1         CAN_BTR_TS1_16TQ
+#endif
+
+#ifndef CAN_TS2
+#define CAN_TS2         CAN_BTR_TS2_1TQ
 #endif
 
 /**

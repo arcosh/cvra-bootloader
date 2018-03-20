@@ -127,12 +127,10 @@ void can_interface_init()
              false,           // No automatic retransmission (NART)
              false,           // Receive FIFO locked mode.
              false,           // Transmit FIFO priority.
-             CAN_BTR_SJW_1TQ, // Resynchronization time quanta jump width
-//             CAN_BTR_TS1_10TQ,// Time segment 1 time quanta width
-//             CAN_BTR_TS2_7TQ, // Time segment 2 time quanta width
-             CAN_BTR_TS1_16TQ,
-             CAN_BTR_TS2_1TQ,
-             1,               // Prescaler
+             CAN_SJW,         // Resynchronization time quanta jump width
+             CAN_TS1,         // Time segment 1 time quanta width
+             CAN_TS2,         // Time segment 2 time quanta width
+             CAN_PRESCALER,   // Divide AHB clock to CAN peripheral (bit) clock
              false,           // Loopback
              false);          // Silent
 
