@@ -59,7 +59,9 @@ void rcc_wait_for_osc_not_ready(enum rcc_osc osc)
  */
 #ifndef RCC_PLLCFGR_PLLSRC_HSI
 #define RCC_PLLCFGR_PLLSRC_HSI  0
+#define RCC_PLLCFGR_PLLSRC_HSE  1
 #endif
+
 
 /**
  * Configure the processor to run at 36MHz from the internal resonator
@@ -103,10 +105,106 @@ void rcc_clock_setup_in_hsi_out_36mhz(void)
 }
 
 
+/**
+ * Configure clock to run from external 25 MHz quartz
+ */
+void rcc_clock_setup_in_hse_25mhz_out_36mhz(void)
+{
+    /*
+     * PLLM = 25
+     * PLLN = 144
+     * PLLP = 2
+     * PLLQ = doesn't matter
+     * PLLR = doesn't matter
+     */
+    const uint8_t pllm = 25;
+    const uint8_t plln = 144;
+    // TODO: Why does it work with P=20, but not with P=2?
+    const uint8_t pllp = 20;
+    const uint8_t pllq = 2;
+
+    /*
+     * Enable internal RC oscillator
+     */
+    rcc_osc_on(HSI);
+    rcc_wait_for_osc_ready(HSI);
+
+    /*
+     * Select internal oscillator as SYSCLK source
+     */
+    rcc_set_sysclk_source(RCC_CFGR_SW_HSI);
+    rcc_wait_for_sysclk_status(HSI);
+
+    /*
+     * Enable external oscillator
+     */
+    rcc_osc_on(HSE);
+    rcc_wait_for_osc_ready(HSE);
+
+    /*
+     * Disable PLL before configuring it
+     */
+    rcc_osc_off(PLL);
+    rcc_wait_for_osc_not_ready(PLL);
+
+    /*
+     * Configure PLL
+     * This also configures HSE as PLL source.
+     */
+    rcc_set_main_pll_hse(pllm, plln, pllp, pllq);
+
+    /*
+     * Enable PLL oscillator and wait for it to stabilize
+     */
+    rcc_osc_on(PLL);
+    rcc_wait_for_osc_ready(PLL);
+
+    /*
+     * Set the bus prescalers
+     *
+     * AHB prescaler = 2
+     * APB1 prescaler = 1
+     * APB2 prescaler = 1
+     */
+    rcc_set_hpre(RCC_CFGR_HPRE_DIV_2);
+    rcc_set_ppre1(RCC_CFGR_PPRE_DIV_NONE);
+    rcc_set_ppre2(RCC_CFGR_PPRE_DIV_NONE);
+
+//    rcc_set_hpre(1 << 2);
+//    rcc_set_ppre1(0);
+//    rcc_set_ppre2(0);
+
+    /*
+     * Save the configured clock frequencies
+     */
+//    rcc_ahb_frequency = 36000000;
+//    rcc_apb1_frequency = 36000000;
+//    rcc_apb2_frequency = 36000000;
+
+    /*
+     * Adjust flash writer wait states
+     *
+     * 0WS from 0-24MHz
+     * 1WS from 24-48MHz
+     * 2WS from 48-72MHz
+     */
+    flash_set_ws(FLASH_ACR_LATENCY_2WS);
+
+    /*
+     * Select PLL as SYSCLK source
+     */
+    rcc_set_sysclk_source(RCC_CFGR_SW_PLL);
+    rcc_wait_for_sysclk_status(PLL);
+}
+
+
 void platform_main(int arg)
 {
     // Run from internal RC oscillator
     rcc_clock_setup_in_hsi_out_36mhz();
+
+    // Run from external 25 MHz quartz
+//    rcc_clock_setup_in_hse_25mhz_out_36mhz();
 
     // Initialize the on-board LED(s)
     led_init();
