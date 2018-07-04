@@ -13,6 +13,9 @@ PLATFORM_PATH = platform/nucleo-board-stm32f446re/
 
 include ../verbosity.mk
 
+# Include commit information
+include ../git.mk
+
 ################################################################################
 
 CC  = arm-none-eabi-gcc
