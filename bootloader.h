@@ -9,6 +9,20 @@ extern "C" {
 #include <platform.h>
 
 /**
+ * Store the bootloader version in the binary
+ */
+#ifdef GIT_VERSION_TAG
+#define BOOTLOADER_VERSION      GIT_VERSION_TAG
+#else
+#define BOOTLOADER_VERSION      "undefined"
+#endif
+#ifdef GIT_COMMIT_HASH
+#define BOOTLOADER_COMMIT       GIT_COMMIT_HASH
+#else
+#define BOOTLOADER_COMMIT       "undefined"
+#endif
+
+/**
  * The default name to write to a new configuration
  * in case no usable configuration is found
  *

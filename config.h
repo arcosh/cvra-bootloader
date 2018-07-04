@@ -21,6 +21,8 @@ extern "C" {
 #define CONFIG_KEY_APPLICATION_SIZE     "application_size"
 #endif
 #define CONFIG_KEY_UPDATE_COUNT         "update_count"
+#define CONFIG_KEY_BOOTLOADER_COMMIT    "bootloader_commit"
+#define CONFIG_KEY_BOOTLOADER_VERSION   "bootloader_version"
 
 
 typedef struct {
@@ -30,6 +32,12 @@ typedef struct {
     uint32_t application_crc;
     uint32_t application_size;
     uint32_t update_count;
+
+    /** The hash of the commit this binary was compiled from */
+    char* bootloader_commit;
+
+    /** This bootloader's version tag */
+    char* bootloader_version;
 } bootloader_config_t;
 
 /** Returns true if the given config page is valid. */

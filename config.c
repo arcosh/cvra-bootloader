@@ -50,7 +50,7 @@ void config_write(void *buffer, bootloader_config_t *config, size_t buffer_size)
 
 void config_write_messagepack(cmp_ctx_t *context, bootloader_config_t *config)
 {
-    cmp_write_map(context, 6);
+    cmp_write_map(context, 8);
 
     cmp_write_str(context, CONFIG_KEY_ID, sizeof(CONFIG_KEY_ID)-1);
     cmp_write_u8(context, config->ID);
@@ -69,6 +69,12 @@ void config_write_messagepack(cmp_ctx_t *context, bootloader_config_t *config)
 
     cmp_write_str(context, CONFIG_KEY_UPDATE_COUNT, sizeof(CONFIG_KEY_UPDATE_COUNT)-1);
     cmp_write_uint(context, config->update_count);
+
+    cmp_write_str(context, CONFIG_KEY_BOOTLOADER_COMMIT, sizeof(CONFIG_KEY_BOOTLOADER_COMMIT)-1);
+    cmp_write_str(context, config->bootloader_commit, strlen(config->bootloader_commit));
+
+    cmp_write_str(context, CONFIG_KEY_BOOTLOADER_VERSION, sizeof(CONFIG_KEY_BOOTLOADER_VERSION)-1);
+    cmp_write_str(context, config->bootloader_version, strlen(config->bootloader_version));
 }
 
 bootloader_config_t config_read(void *buffer, size_t buffer_size)

@@ -149,6 +149,13 @@ void bootloader_main(int arg)
         config.update_count = 1;
     }
 
+    /*
+     * The bootloader version is not read from flash,
+     * but hard-coded into the bootloader binary at compile-time.
+     */
+    config.bootloader_commit = BOOTLOADER_COMMIT;
+    config.bootloader_version = BOOTLOADER_VERSION;
+
     /**
      * Struct to store the properties of an incoming datagram
      */
