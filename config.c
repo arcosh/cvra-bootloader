@@ -1,13 +1,16 @@
+
 #include <string.h>
 #include <cmp_mem_access/cmp_mem_access.h>
 #include <crc/crc32.h>
 #include "config.h"
 #include "platform.h"
 
+
 static inline uint32_t config_calculate_crc(void *page, size_t page_size)
 {
     return crc32(0, (uint8_t *)page + 4, page_size - 4);
 }
+
 
 static inline uint32_t config_read_crc(void *page)
 {
@@ -20,6 +23,7 @@ static inline uint32_t config_read_crc(void *page)
     return crc;
 }
 
+
 bool config_is_valid(void *page, size_t page_size)
 {
 #ifndef ADDRESS_BOUNDARY_CHECK_DISABLED
@@ -31,6 +35,7 @@ bool config_is_valid(void *page, size_t page_size)
 
     return (config_read_crc(page) == config_calculate_crc(page, page_size));
 }
+
 
 void config_write(void *buffer, bootloader_config_t *config, size_t buffer_size)
 {
@@ -47,6 +52,7 @@ void config_write(void *buffer, bootloader_config_t *config, size_t buffer_size)
     p[2] = ((crc >> 8) & 0xff);
     p[3] = (crc & 0xff);
 }
+
 
 void config_write_messagepack(cmp_ctx_t *context, bootloader_config_t *config)
 {
@@ -77,6 +83,7 @@ void config_write_messagepack(cmp_ctx_t *context, bootloader_config_t *config)
     cmp_write_str(context, config->bootloader_version, strlen(config->bootloader_version));
 }
 
+
 bootloader_config_t config_read(void *buffer, size_t buffer_size)
 {
     bootloader_config_t result;
@@ -89,6 +96,7 @@ bootloader_config_t config_read(void *buffer, size_t buffer_size)
 
     return result;
 }
+
 
 void config_update_from_serialized(bootloader_config_t *config, cmp_ctx_t *context)
 {

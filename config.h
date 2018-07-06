@@ -1,3 +1,4 @@
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
@@ -5,9 +6,11 @@
 extern "C" {
 #endif
 
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <cmp/cmp.h>
+
 
 #define CONFIG_KEY_ID                   "ID"
 #define CONFIG_KEY_BOARD_NAME           "name"
@@ -25,6 +28,10 @@ extern "C" {
 #define CONFIG_KEY_BOOTLOADER_VERSION   "bootloader_version"
 
 
+/**
+ * This struct stores all bootloader configuration parameters.
+ * It is read from and written to a dedicated config region in the flash memory.
+ */
 typedef struct {
     uint8_t ID; /**< Node ID */
     char board_name[64 + 1];   /**< Node human readable name, eg: 'arms.left.shoulder'. */
@@ -40,25 +47,38 @@ typedef struct {
     char* bootloader_version;
 } bootloader_config_t;
 
-/** Returns true if the given config page is valid. */
+
+/**
+ * Returns true if the given config page is valid.
+ */
 bool config_is_valid(void *page, size_t page_size);
 
-/** Serializes the configuration to the buffer.
- *
- * It must be done on a RAM buffer because we will modify it non sequentially, to add CRC.
+
+/**
+ * Serializes the configuration struct to a buffer and appends a valid CRC
  */
 void config_write(void *buffer, bootloader_config_t *config, size_t buffer_size);
 
-/** Serializes the config into a messagepack map. */
+
+/**
+ * Serializes the configuration struct to a MessagePack buffer
+ */
 void config_write_messagepack(cmp_ctx_t *context, bootloader_config_t *config);
 
+
+/**
+ * Fills an empty configuration struct by parsing a buffer as MessagePack
+ */
 bootloader_config_t config_read(void *buffer, size_t buffer_size);
 
-/** Updates the config from the keys found in the messagepack map.
+
+/**
+ * Updates an existing configuration struct by parsing a MessagePack buffer
  *
- * @note Keys not in the MessagePack map are left unchanged.
+ * @note Unrecognized struct keys in the MessagePack are ignored.
  */
 void config_update_from_serialized(bootloader_config_t *config, cmp_ctx_t *context);
+
 
 #ifdef __cplusplus
 }
